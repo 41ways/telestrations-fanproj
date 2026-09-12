@@ -59,6 +59,8 @@ function seat(i) {
   const name = NAMES[i % NAMES.length];
   const pid = 'bot-' + i + '-' + BOOT;
   let sock, acted = new Set(), lastBook = -1, starting = false, yielded = 0, tries = 0;
+  /* 예약해 둔 전송이 재접속 직후 아직 안 열린 소켓에 나가면 프로세스가 통째로 죽는다 — 열려 있을 때만 보낸다 */
+  const say = o => { if (sock && sock.readyState === 1) sock.send(JSON.stringify(o)); };
 
   const hook = () => {
     sock = new WebSocket(`${ws}/room?code=${code}&pid=${pid}&name=${encodeURIComponent(name)}`);
@@ -89,7 +91,7 @@ function seat(i) {
     if (boss && human && Date.now() - yielded > 2000) {
       yielded = Date.now();
       console.log(name, '→ 방장을', human.name + '님께 넘겼습니다');
-      sock.send(JSON.stringify({ t: 'pass', to: human.pid }));
+      say({ t: 'pass', to: human.pid });
       return;
     }
 
@@ -98,7 +100,7 @@ function seat(i) {
       if (boss && v.players.length >= 4 && !starting) {
         starting = true;
         console.log(name, '(방장) 3초 뒤 시작합니다 — 더 들어올 사람 있으면 지금');
-        setTimeout(() => sock.send(JSON.stringify({ t: 'start' })), 3000);
+        setTimeout(() => say({ t: 'start' }), 3000);
       }
       return;
     }
@@ -106,7 +108,7 @@ function seat(i) {
 
     if (boss && v.phase === 'reveal') {
       const at = 'turn:' + v.reveal.b + ':' + v.reveal.i;
-      if (!acted.has(at)) { acted.add(at); setTimeout(() => sock.send(JSON.stringify({ t: 'turn', d: 1 })), 2600); }
+      if (!acted.has(at)) { acted.add(at); setTimeout(() => say({ t: 'turn', d: 1 }), 2600); }
     }
 
     // 공개 때는 가끔 별을 준다. 공책이 넘어갈 때마다 한 번씩
@@ -114,7 +116,7 @@ function seat(i) {
       lastBook = v.reveal.b;
       if (Math.random() < .7) {
         const k = Math.floor(Math.random() * Math.max(1, (v.pages || []).length));
-        setTimeout(() => sock.send(JSON.stringify({ t: 'star', b: v.reveal.b, i: k })), 500 + Math.random() * 900);
+        setTimeout(() => say({ t: 'star', b: v.reveal.b, i: k }), 500 + Math.random() * 900);
       }
       return;
     }
@@ -128,7 +130,7 @@ function seat(i) {
       if (v.picked) {
         if (!v.andDraw) return;
         setTimeout(() => {
-          sock.send(JSON.stringify({ t: 'head', s: blank ? [] : doodle(i + 1) }));
+          say({ t: 'head', s: blank ? [] : doodle(i + 1) });
           console.log(name, blank ? '고른 말은 안 그리고 넘겼습니다' : '고른 말을 그렸습니다 ←', v.picked.word);
         }, blank ? 500 + i * 200 : 1200 + i * 600);
         return;
@@ -136,20 +138,20 @@ function seat(i) {
       acted.delete(key);                      // 고른 뒤 그림 차례에 한 번 더 들어와야 한다
       const i2 = Math.floor(Math.random() * 6);
       setTimeout(() => {
-        sock.send(JSON.stringify({ t: 'pick', i: i2 }));
+        say({ t: 'pick', i: i2 });
         console.log(name, '제시어 골랐습니다');
       }, 700 + i * 400 + Math.random() * 800);
     } else if (v.phase === 'play') {
       const wait = 1500 + i * 700 + Math.random() * 2500;
       if (v.kind === 'draw') {
         setTimeout(() => {
-          sock.send(JSON.stringify({ t: 'draw', s: blank ? [] : doodle(i + v.round) }));
+          say({ t: 'draw', s: blank ? [] : doodle(i + v.round) });
           console.log(name, blank ? '안 그리고 넘겼습니다 ←' : '그렸습니다 ←', v.prev ? v.prev.word : '(빈 쪽)');
         }, blank ? 600 + i * 200 : wait);
       } else {
         const w = pick(GUESS);
         setTimeout(() => {
-          sock.send(JSON.stringify({ t: 'guess', w }));
+          say({ t: 'guess', w });
           console.log(name, '찍었습니다 →', w);
         }, wait);
       }
