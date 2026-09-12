@@ -840,6 +840,10 @@ var SECTIONS = ['#sTitle','#sGate','#sLobby','#sPick','#sDraw','#sGuess','#sWait
 /** 한 화면만 남긴다. 끝 화면처럼 둘을 같이 띄워야 할 때는 여럿을 넘긴다 */
 function show(){
   var want = [].slice.call(arguments);
+  var main = want[0];
+  /* 그리기·맞히기·공책은 넓게, 나머지 짧은 화면은 560 으로 모아 세로 가운데에 */
+  document.body.classList.toggle('wide', main === '#sDraw' || main === '#sGuess' || main === '#sReveal');
+  document.body.classList.toggle('mid', main === '#sGate' || main === '#sLobby' || main === '#sPick' || main === '#sWait' || main === '#sDone');
   SECTIONS.forEach(function(s){
     var el = $(s), was = !el.classList.contains('hide'), now = want.indexOf(s) >= 0;
     el.classList.toggle('hide', !now);
@@ -891,8 +895,7 @@ function setPad(key){
 function draw(){
   var r = S.room;
   document.body.classList.toggle('at-title', !r && !S.entered);   // 타이틀에서는 머리글을 숨긴다 — 큰 제목이 대신 선다
-  document.body.classList.toggle('wide', !!r && (r.phase === 'play' || r.phase === 'reveal' || (r.phase === 'done' && S.peek)));
-  document.body.classList.toggle('mid', (!r && S.entered) || (!!r && (r.phase === 'lobby' || r.phase === 'pick' || (r.phase === 'done' && !S.peek))));
+  /* 판 폭(wide/mid)은 show() 가 화면에 맞춰 정한다 */
   if (r || S.entered) document.body.classList.remove('rules');
   $('#rc').classList.toggle('hide', !r);
   $('#step').classList.toggle('hide', !r || r.phase === 'lobby');
