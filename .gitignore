@@ -1,0 +1,8 @@
+node_modules/
+.wrangler/
+.dev.vars
+# 만들어지는 것들 — 원본 스크립트로 다시 만든다
+design/telestrations-ui.html
+design/type-compare.html
+design/title-compare.html
+design/_faces.css

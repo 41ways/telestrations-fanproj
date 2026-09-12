@@ -1,0 +1,23 @@
+# 텔레스트레이션 — 그림과 추측이 한 칸씩 돌아가는 방. Cloudflare Workers 무료 플랜.
+#
+# 방 하나에 Durable Object 하나. 무료 플랜에서는 SQLite 저장소를 쓰는 DO 만 쓸 수 있다
+# (new_sqlite_classes). 연결은 WebSocket Hibernation 으로 받으므로, 아무도 손을 대지
+# 않는 동안에는 방이 잠들어 켜진 시간을 거의 쓰지 않는다.
+# 결제 수단을 등록하지 않았으므로 한도를 넘어도 요금이 붙지 않고 그날 요청만 거절된다.
+name = "telestrations"
+main = "src/index.js"
+compatibility_date = "2026-08-01"
+workers_dev = true
+preview_urls = false
+
+# 클라이언트는 public/index.html 한 장. 워커는 /room 웹소켓만 맡는다.
+[assets]
+directory = "./public"
+
+[[durable_objects.bindings]]
+name = "ROOM"
+class_name = "Room"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Room"]
