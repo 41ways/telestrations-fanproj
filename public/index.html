@@ -240,10 +240,6 @@ input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-wei
 .six button:nth-child(3n){transform:rotate(-1deg)}
 .six button:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--ink)}
 .six button.on{background:var(--yellow)}
-.six button::before{content:"";position:absolute;left:10px;top:10px;width:9px;height:9px;border-radius:50%;background:var(--pink);border:2px solid var(--ink)}
-.six button:nth-child(2)::before{background:var(--blue)}.six button:nth-child(3)::before{background:var(--green)}
-.six button:nth-child(4)::before{background:var(--orange)}.six button:nth-child(5)::before{background:#9775fa}.six button:nth-child(6)::before{background:var(--red)}
-.six button{position:relative}
 
 /* ── 앞 쪽 보여 주기 ── */
 .prev{
@@ -464,6 +460,7 @@ summary{cursor:pointer;font-size:17px;font-weight:700;color:var(--dim)}
   <section class="card hide" id="sPick">
     <p class="lede" id="pickLede"></p>
     <div class="six" id="six"></div>
+    <div class="row"><button class="btn go big" id="bPickDone" disabled>이걸로 정하기</button></div>
   </section>
 
   <!-- 그리기 -->
@@ -817,6 +814,12 @@ $('#bNext').onclick = function(){ send({ t:'turn', d:1 }); };
 $('#bPrev').onclick = function(){ send({ t:'turn', d:-1 }); };
 $('#lvRow').onclick = function(e){ var b = e.target.closest('button'); if (b && !b.disabled) send({ t:'set', level:b.dataset.v }); };
 
+$('#bPickDone').onclick = function(){
+  if (S.pickSel < 0) return;
+  $('#bPickDone').disabled = true;
+  send({ t:'pick', i:S.pickSel });
+};
+
 $('#bDrawDone').onclick = function(){
   if (S.sent) return;
   S.sent = true;
@@ -938,15 +941,22 @@ function draw(){
       return;
     }
     show('#sPick');
-    $('#pickLede').textContent = r.andDraw ? '고르면 바로 그립니다' : '';
-    $('#six').innerHTML = (r.card || []).map(function(w, i){
-      return '<button data-i="' + i + '">' + esc(w) + '</button>';
-    }).join('');
+    $('#pickLede').textContent = r.andDraw ? '정하면 바로 그립니다' : '';
+    /* 카드는 라운드마다 한 번만 그린다 — 남이 낼 때마다 다시 그리면 골라 둔 표시가 날아간다 */
+    var pickKey = r.code + ':' + r.round;
+    if (S.pickFor !== pickKey) {
+      S.pickFor = pickKey; S.pickSel = -1;
+      $('#six').innerHTML = (r.card || []).map(function(w, i){
+        return '<button data-i="' + i + '">' + esc(w) + '</button>';
+      }).join('');
+    }
+    $('#six').querySelectorAll('button').forEach(function(x){ x.classList.toggle('on', +x.dataset.i === S.pickSel); });
+    $('#bPickDone').disabled = S.pickSel < 0;
     $('#six').onclick = function(e){
       var b = e.target.closest('button'); if (!b) return;
-      $('#six').querySelectorAll('button').forEach(function(x){ x.classList.remove('on'); });
-      b.classList.add('on');
-      send({ t:'pick', i:+b.dataset.i });
+      S.pickSel = +b.dataset.i;                    // 눌러서 표시만. 정하기는 아래 단추로
+      $('#six').querySelectorAll('button').forEach(function(x){ x.classList.toggle('on', x === b); });
+      $('#bPickDone').disabled = false;
     };
     return;
   }
