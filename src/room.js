@@ -98,6 +98,7 @@ export class Room extends DurableObject {
     /* 첫 라운드 — 카드를 고른다. 짝수 인원이면 고른 뒤 곧바로 자기가 그린다 */
     if (r.phase === 'pick' && s >= 0) {
       v.card = r.cards[pid] || [];
+      v.custom = r.level === 'custom';
       v.andDraw = headOf(n) === 2;
       v.picked = (await this.page(s, 0)) || null;      // 골라 둔 말 (짝수 인원이면 그리는 중에도 보인다)
     }
@@ -159,7 +160,7 @@ export class Room extends DurableObject {
     try {
       if (m.t === 'start' && isHost && r.phase === 'lobby') await this.start();
       else if (m.t === 'set' && isHost && r.phase === 'lobby') this.set(m);
-      else if (m.t === 'pick' && r.phase === 'pick') await this.pick(pid, m.i);
+      else if (m.t === 'pick' && r.phase === 'pick') await this.pick(pid, m.i, m.w);
       else if (m.t === 'head' && r.phase === 'pick') await this.head(pid, m.s);
       else if (m.t === 'draw' && r.phase === 'play') await this.hand(pid, { strokes: m.s });
       else if (m.t === 'guess' && r.phase === 'play') await this.hand(pid, { word: clean(m.w, MAX_GUESS) });
@@ -229,15 +230,16 @@ export class Room extends DurableObject {
     if (old.length) await this.ctx.storage.delete(old);
     const mix = (LEVELS[r.level] || LEVELS[DEFAULT_LEVEL]).mix;
     r.cards = {};
-    for (const p of r.players) r.cards[p.pid] = card(Math.random, mix);
+    if (mix) for (const p of r.players) r.cards[p.pid] = card(Math.random, mix);   // 「직접」이면 카드 없이 각자 적는다
     r.phase = 'pick'; r.round = 1; r.done = []; r.votes = {}; r.reveal = { b: 0, i: -1 }; r.started = Date.now();
     await this.clock(secsOf(r.secs, headOf(n) === 2 ? 'pickdraw' : 'pick'));
   }
 
   /** 카드에서 말을 고른다 — 자기 공책 0쪽 */
-  async pick(pid, i) {
+  /** 카드에서 골랐으면 i, 직접 적었으면 w */
+  async pick(pid, i, w) {
     const r = this.r, n = r.players.length;
-    const w = (r.cards[pid] || [])[i | 0];
+    w = r.level === 'custom' ? clean(w, MAX_GUESS) : (r.cards[pid] || [])[i | 0];
     if (!w || r.done.includes(pid)) return;
     const s = r.players.findIndex(p => p.pid === pid);
     if (s < 0) return;

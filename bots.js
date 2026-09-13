@@ -138,7 +138,7 @@ function seat(i) {
       acted.delete(key);                      // 고른 뒤 그림 차례에 한 번 더 들어와야 한다
       const i2 = Math.floor(Math.random() * 6);
       setTimeout(() => {
-        say({ t: 'pick', i: i2 });
+        say(v.custom ? { t: 'pick', w: pick(GUESS) } : { t: 'pick', i: i2 });
         console.log(name, '제시어 골랐습니다');
       }, 700 + i * 400 + Math.random() * 800);
     } else if (v.phase === 'play') {

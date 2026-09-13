@@ -482,6 +482,7 @@ summary{cursor:pointer;font-size:17px;font-weight:700;color:var(--dim)}
         <button data-v="easy">쉬움</button>
         <button data-v="normal">보통</button>
         <button data-v="hard">어려움</button>
+        <button data-v="custom">직접</button>
       </div>
       <label>그리는 시간</label>
       <div class="pickrow" id="secRow">
@@ -503,6 +504,7 @@ summary{cursor:pointer;font-size:17px;font-weight:700;color:var(--dim)}
   <section class="card hide" id="sPick">
     <p class="lede" id="pickLede"></p>
     <div class="six" id="six"></div>
+    <input type="text" id="pw" class="hide" maxlength="24" autocomplete="off" placeholder="제시어를 적으세요">
     <div class="row"><button class="btn go big" id="bPickDone" disabled>이걸로 정하기</button></div>
   </section>
 
@@ -902,10 +904,20 @@ $('#lvRow').onclick = function(e){ var b = e.target.closest('button'); if (b && 
 $('#secRow').onclick = function(e){ var b = e.target.closest('button'); if (b && !b.disabled) send({ t:'set', secs:+b.dataset.v }); };
 
 $('#bPickDone').onclick = function(){
+  var r = S.room;
+  if (r && r.custom) {                                         // 직접 적은 말
+    var w = ($('#pw').value || '').trim();
+    if (!w) return;
+    $('#bPickDone').disabled = true;
+    send({ t:'pick', w:w });
+    return;
+  }
   if (S.pickSel < 0) return;
   $('#bPickDone').disabled = true;
   send({ t:'pick', i:S.pickSel });
 };
+$('#pw').addEventListener('input', function(){ $('#bPickDone').disabled = !$('#pw').value.trim(); });
+$('#pw').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('#bPickDone').click(); });
 
 $('#bDrawDone').onclick = function(){
   if (S.sent) return;
@@ -972,6 +984,7 @@ function autoHand(){
   if (!$('#sDraw').classList.contains('hide') && pad.strokes.length) $('#bDrawDone').click();
   else if (!$('#sGuess').classList.contains('hide') && ($('#gw').value || '').trim()) $('#bGuessDone').click();
   else if (r.phase === 'vote' && !r.myVote && S.albSel) $('#bVote').click();   // 골라만 두고 안 냈으면 그걸로
+  else if (r.phase === 'pick' && r.custom && !r.picked && ($('#pw').value || '').trim()) $('#bPickDone').click();
 }
 
 /** 새 쪽을 맡을 때만 그림판을 비운다. 같은 쪽을 다시 그리는 중이면 남겨 둔다 */
@@ -1036,12 +1049,16 @@ function draw(){
     $('#pickLede').textContent = r.andDraw ? '정하면 바로 그립니다' : '';
     /* 카드는 라운드마다 한 번만 그린다 — 남이 낼 때마다 다시 그리면 골라 둔 표시가 날아간다 */
     var pickKey = r.code + ':' + r.round;
+    $('#six').classList.toggle('hide', !!r.custom);
+    $('#pw').classList.toggle('hide', !r.custom);
     if (S.pickFor !== pickKey) {
       S.pickFor = pickKey; S.pickSel = -1;
       $('#six').innerHTML = (r.card || []).map(function(w, i){
         return '<button data-i="' + i + '">' + esc(w) + '</button>';
       }).join('');
+      if (r.custom) { $('#pw').value = ''; $('#pw').focus(); }
     }
+    if (r.custom) { $('#bPickDone').disabled = !$('#pw').value.trim(); return; }   // 직접 적는 판은 카드가 없다
     $('#six').querySelectorAll('button').forEach(function(x){ x.classList.toggle('on', +x.dataset.i === S.pickSel); });
     $('#bPickDone').disabled = S.pickSel < 0;
     $('#six').onclick = function(e){

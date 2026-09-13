@@ -59,6 +59,7 @@ const all = [...EASY, ...MEDIUM, ...HARD];
 assert(new Set(all).size === all.length, '제시어 중복');
 assert(all.every(w => w.trim() === w && w.length > 0 && w.length <= 20), '제시어 길이·공백');
 for (const [key, lv] of Object.entries(LEVELS)) {
+  if (!lv.mix) continue;                                  // 「직접」은 카드가 없다
   const sum = lv.mix.easy + lv.mix.medium + lv.mix.hard;
   assert(sum === 6, key + ' 난이도가 여섯 장이 아님 (' + sum + ')');
   for (let i = 0; i < 200; i++) {
