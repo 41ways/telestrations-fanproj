@@ -395,9 +395,12 @@ input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-wei
 /* ── 1등 ── */
 .crown{font-size:20px;color:var(--dim);margin:0 0 9px;display:flex;align-items:center;gap:7px}
 .crown b{font-size:26px}
-#top{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
-#top.many{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}   /* 공동 1등이 다섯 넘으면 셋씩 — 화면에 다 들어가게 */
-#top .crown{grid-column:1/-1}
+/* 1등은 가운데. 하나면 한 장이 가운데 서고, 공동이면 나란히 가운데로 모인다 */
+#top{display:flex;flex-wrap:wrap;justify-content:center;gap:14px}
+#top .crown{flex:0 0 100%;justify-content:center;margin-bottom:2px}
+#top .win{flex:1 1 240px;max-width:360px}
+#top.many .win{flex:1 1 150px;max-width:200px}   /* 공동 1등이 다섯 넘으면 작게 — 화면에 다 들어가게 */
+#sDone .row{justify-content:center}
 .win .shot{width:min(100%,calc(100vh - 360px));margin:0 auto}
 .win{border:3px solid var(--ink);border-radius:18px;background:var(--yellow);padding:13px;
   box-shadow:4px 4px 0 var(--ink);margin-bottom:4px;transform:rotate(-.6deg)}
