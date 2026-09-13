@@ -91,7 +91,7 @@ export class Room extends DurableObject {
       host: r.host, me: pid, seat: s, level: r.level, secs: r.secs || DEFAULT_SECS,
       players: r.players.map(p => ({ pid: p.pid, name: p.name, on: live.has(p.pid) })),
       left: Math.max(0, Math.round((r.deadline - Date.now()) / 1000)),
-      waiting: r.players.filter(p => !r.done.includes(p.pid)).map(p => p.name),
+      waiting: r.players.filter(p => !r.done.includes(p.pid)).map(p => p.pid),
       done: r.done.includes(pid),
     };
 
@@ -127,7 +127,7 @@ export class Room extends DurableObject {
       v.album = { key: this.albumKey(), of: n, pages: pagesOf(n) };
       v.myVote = r.votes[pid] || null;
       v.voted = Object.keys(r.votes).length;
-      v.voters = r.players.filter(p => live.has(p.pid)).length;
+      v.voters = r.players.filter(p => live.has(p.pid) || r.votes[p.pid]).length;
     }
     if (r.phase === 'done') v.top = await this.winner();
     return v;
@@ -185,7 +185,7 @@ export class Room extends DurableObject {
   async tidy(ws) {
     const r = this.r;
     if (r && r.phase === 'lobby') await this.handoff(ws);          // 시작 전엔 자리를 바로 비운다
-    else setTimeout(() => { this.handoff(null).then(() => this.pushAll()).catch(() => {}); }, 4000);
+    else setTimeout(() => { this.handoff(null).then(() => this.settle()).then(() => this.pushAll()).catch(() => {}); }, 4000);
     await this.pushAll();
   }
 
@@ -329,9 +329,16 @@ export class Room extends DurableObject {
     b |= 0; i |= 0;
     if (b < 0 || b >= n || i < 0 || i >= pagesOf(n)) return;
     r.votes[pid] = b + ':' + i;
+    await this.settle();
+  }
+
+  /** 붙어 있는 사람이 다 냈으면 결과로. 누가 나갔을 때도 다시 본다 */
+  async settle() {
+    const r = this.r;
+    if (!r || r.phase !== 'vote') return;
     const live = new Set(this.ctx.getWebSockets().map(w => this.who(w).pid));
     const voters = r.players.filter(p => live.has(p.pid) || r.votes[p.pid]);
-    if (voters.every(p => r.votes[p.pid])) await this.finish();
+    if (voters.length && voters.every(p => r.votes[p.pid])) { await this.finish(); await this.save(); }
   }
 
   async finish() {
@@ -368,6 +375,14 @@ export class Room extends DurableObject {
     const r = this.r;
     r.phase = 'lobby'; r.round = 0; r.deadline = 0; r.done = []; r.votes = {}; r.cards = {};
     const first = r.players.shift(); if (first) r.players.push(first);   // 자리를 돌려 짝이 바뀌게
+    /* 판 도중에 나간 사람은 자리를 비우고, 구경만 하던 사람은 이제 자리에 앉는다 */
+    const live = new Set(this.ctx.getWebSockets().map(w => this.who(w).pid));
+    r.players = r.players.filter(p => live.has(p.pid));
+    for (const ws of this.ctx.getWebSockets()) {
+      const { pid, name } = this.who(ws);
+      if (pid && !r.players.some(p => p.pid === pid) && r.players.length < MAX_PLAYERS) r.players.push({ pid, name: name || '아무개' });
+    }
+    if (!live.has(r.host) && r.players[0]) r.host = r.players[0].pid;
     await this.ctx.storage.setAlarm(Date.now() + IDLE_MS);
   }
 
