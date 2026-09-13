@@ -413,8 +413,11 @@ input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-wei
 .win .said{font-size:clamp(24px,7vw,32px);font-weight:700;line-height:1.2;word-break:keep-all}
 
 .scribble{display:block;width:min(300px,80%);margin:4px auto 10px}
-.scribble path{stroke-dasharray:520;stroke-dashoffset:520;animation:scrib 2.6s ease-in-out infinite}
-@keyframes scrib{0%{stroke-dashoffset:520}55%{stroke-dashoffset:0}100%{stroke-dashoffset:-520}}
+/* 왼쪽에서 끝까지 그려지고, 잠깐 머물다, 사라진 뒤 다시 — 앞에서부터 지워지면 끊긴 선처럼 보인다 */
+.scribble path{stroke-dasharray:520;stroke-dashoffset:520;animation:scrib 2.8s ease-in-out infinite}
+@keyframes scrib{0%{stroke-dashoffset:520;opacity:1}55%{stroke-dashoffset:0;opacity:1}82%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}
+#sWait{text-align:center}
+#sWait .who{justify-content:center}
 @media (prefers-reduced-motion:reduce){.scribble path{animation:none;stroke-dashoffset:0}}
 .note{font-size:16px;color:var(--dim);margin:10px 0 0}
 .toast{
