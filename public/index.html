@@ -376,7 +376,7 @@ input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-wei
 .alb .pg .by{font-size:13px;padding-right:44px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
 .alb .pg .tab{font-size:12px;padding:0 8px}
 .alb .pg .said{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;font-size:20px;padding:0 4px}
-.alb .pg .shot{border-width:2px}
+.alb .pg .shot{border-width:2px;flex:1;min-height:0;width:auto;max-width:100%;margin:0 auto}
 .alb.pick .pg{cursor:pointer;transition:transform .12s}
 .alb.pick .pg:hover{transform:translateY(-2px)}
 .alb .pg.on{outline:4px solid var(--orange);outline-offset:3px;background-color:#fff3e0}
@@ -384,13 +384,14 @@ input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-wei
 #albSel{font-size:17px;margin:12px 0 0;min-height:24px}
 #albSel b{color:var(--orange)}
 @media (min-width:760px){
-  #sAlbum .alb{grid-template-columns:repeat(6,minmax(0,1fr))}
+  #sAlbum .alb{grid-template-columns:repeat(var(--cols,6),minmax(0,1fr))}   /* 쪽 수만큼, 여섯까지 */
 }
 
 /* ── 1등 ── */
 .crown{font-size:20px;color:var(--dim);margin:0 0 9px;display:flex;align-items:center;gap:7px}
 .crown b{font-size:26px}
 #top{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+#top.many{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}   /* 공동 1등이 다섯 넘으면 셋씩 — 화면에 다 들어가게 */
 #top .crown{grid-column:1/-1}
 .win .shot{width:min(100%,calc(100vh - 360px));margin:0 auto}
 .win{border:3px solid var(--ink);border-radius:18px;background:var(--yellow);padding:13px;
@@ -807,13 +808,14 @@ $('#bPlay').onclick = function(){ S.entered = true; draw(); $('#nm').focus(); };
  * 색종이 조각들을 쏜다. 조각마다 어디서(x %, y px) 어느 쪽으로(dir) 얼마나 높이 어디까지가 다르다.
  * 모두 포물선으로 솟았다가 팔랑이며 떨어진다. far 는 멀리 쏠 때의 배율
  */
-function burst(el, shots, far){
-  var h = '', rnd = Math.random, spread = far || 1;
+function burst(el, shots, o){
+  var h = '', rnd = Math.random, k = (o && o.far) || 1;
+  var between = function(a, b){ return a + rnd() * (b - a); };
   shots.forEach(function(sh){
     for (var i = 0; i < sh.n; i++) {
-      var dx = sh.dir * (20 + rnd() * 160) * spread;
-      var peak = -(70 + rnd() * 150) * spread, fall = (180 + rnd() * 160) * spread;
-      var w = 6 + rnd() * 7, hg = 8 + rnd() * 12, round = rnd() < .3;
+      var dx = sh.dir * between(o.dx[0], o.dx[1]) * k;
+      var peak = -between(o.peak[0], o.peak[1]) * k, fall = between(o.fall[0], o.fall[1]) * k;
+      var w = between(7, 13), hg = between(9, 20), round = rnd() < .3;
       h += '<i style="--x:' + (sh.x + (rnd() * 6 - 3)).toFixed(1) + '%;--y:' + sh.y + 'px;'
         + '--dx:' + dx.toFixed(0) + 'px;--peak:' + peak.toFixed(0) + 'px;--fall:' + fall.toFixed(0) + 'px;'
         + '--r1:' + ((rnd() - .5) * 240).toFixed(0) + 'deg;--r2:' + ((rnd() - .5) * 900).toFixed(0) + 'deg;'
@@ -829,12 +831,13 @@ function burst(el, shots, far){
 function fanfare(){
   if (S.fanfared || !document.body.classList.contains('at-title')) return;
   S.fanfared = true;
-  burst($('#fanfare'), [{ x:22, y:0, dir:-1, n:14 }, { x:78, y:0, dir:1, n:14 }]);
+  burst($('#fanfare'), [{ x:20, y:0, dir:-1, n:14 }, { x:80, y:0, dir:1, n:14 }], { dx:[40, 220], peak:[30, 130], fall:[170, 300] });
 }
 setTimeout(fanfare, 3800);
 /* 1등이 뜰 때 — 화면 아래 양 귀퉁이에서 가운데로 폭죽처럼 */
 function cheer(){
-  burst($('#cheer'), [{ x:4, y:window.innerHeight - 20, dir:1, n:28 }, { x:96, y:window.innerHeight - 20, dir:-1, n:28 }], 2.2);
+  burst($('#cheer'), [{ x:3, y:window.innerHeight - 10, dir:1, n:30 }, { x:97, y:window.innerHeight - 10, dir:-1, n:30 }],
+    { dx:[60, 520], peak:[Math.min(320, innerHeight * .45), Math.min(640, innerHeight * .85)], fall:[200, 500] });
 }
 $('#bRules').onclick = function(){
   document.body.classList.add('rules');
@@ -1104,6 +1107,7 @@ function draw(){
     show('#sDone');
     var top = r.top || [];
     if (top.length && S.cheerFor !== r.album.key) { S.cheerFor = r.album.key; setTimeout(cheer, 150); }   // 판마다 한 번만
+    $('#top').classList.toggle('many', top.length > 4);
     $('#top').innerHTML = (top.length
       ? '<p class="crown"><svg viewBox="0 0 40 30" width="34" height="26" aria-hidden="true"><path d="M4 26h32l3-16-9 7-10-13-10 13-9-7z" fill="#ffd43b" stroke="#3d2b1f" stroke-width="2.6" stroke-linejoin="round"/><circle cx="20" cy="18" r="2.4" fill="#f06595"/><circle cx="10" cy="20" r="1.8" fill="#74c0fc"/><circle cx="30" cy="20" r="1.8" fill="#51cf66"/></svg>'
         + (top.length > 1 ? '공동 <b>1등</b>' : '<b>1등</b>') + '</p>'
@@ -1158,6 +1162,7 @@ function album(r, mode){
     return '<button data-b="' + k + '" class="' + (k === b ? 'on' : '') + '">' + esc(bk.owner) + (mode === 'vote' && selB === k ? ' ★' : '') + '</button>';
   }).join('');
   var grid = $('#albGrid');
+  grid.style.setProperty('--cols', Math.min(6, books[b].pages.length));
   grid.classList.toggle('pick', mode === 'vote' && !voted);
   grid.innerHTML = books[b].pages.map(function(pg, k){
     if (!pg) return '';
