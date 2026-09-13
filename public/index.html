@@ -117,7 +117,7 @@ header{margin-bottom:14px}
   .title .ink .fc,.title .ink .sh,.title .squig path{animation:none;stroke-dashoffset:0;fill-opacity:1;opacity:1;stroke-width:0}
   .title .ink g[class^="l"]{animation:none}
   .title .art g[class^="a-"],.title .art .a-gir path,.title .art .a-gir circle{animation:none;opacity:1;stroke-dashoffset:0;fill-opacity:1}
-  .title .start,.title .trow{animation:none;opacity:1}
+  .title .start,.title .trow,.title .disclaimer{animation:none;opacity:1}
 }
 .title .logo b{font-size:clamp(40px,11.5vw,84px)}
 .title .squig{width:min(300px,72%);height:12px;margin:0 auto}
@@ -140,8 +140,9 @@ header{margin-bottom:14px}
 .title .start{margin-top:26px;width:100%;max-width:520px;padding:13px 48px}
 .trow{display:flex;gap:22px;margin-top:22px}
 /* 시작 단추와 규칙은 그림이 튀어나올 때 같이 — 스케치북(2.15s) 바로 뒤에 */
-.title .start,.title .trow{opacity:0;animation:popup .45s cubic-bezier(.2,1.4,.4,1) 2.35s forwards}
+.title .start,.title .trow,.title .disclaimer{opacity:0;animation:popup .45s cubic-bezier(.2,1.4,.4,1) 2.35s forwards}
 .title .trow{animation-delay:2.55s}
+.title .disclaimer{animation:appear .5s ease-out 2.9s forwards}   /* 게임 시작·규칙이 뜬 다음에 조용히 */
 .trow .btn{border:0;background:none;box-shadow:none;padding:2px 0;font-size:16px;color:var(--dim);
   border-bottom:3px solid transparent;border-radius:0}
 .trow .btn:hover{color:var(--orange);border-bottom-color:var(--orange)}
@@ -426,8 +427,8 @@ input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-wei
   border-radius:999px;box-shadow:3px 3px 0 rgba(0,0,0,.25);
 }
 .rules{font-size:16px;color:var(--dim);padding-left:20px;margin:8px 0 0}
-.disclaimer{font-size:13px;color:#a0917a;line-height:1.6;margin:14px 0 0;padding-top:12px;border-top:2px dotted #e0d2b8}
-.disclaimer a{color:inherit}
+.title .disclaimer{font-size:12.5px;color:#8f8068;line-height:1.65;margin:26px auto 0;max-width:560px;text-align:center}
+.title .disclaimer a{color:inherit}
 .rules li{margin:5px 0}
 summary{cursor:pointer;font-size:17px;font-weight:700;color:var(--dim)}
 </style>
@@ -465,6 +466,14 @@ summary{cursor:pointer;font-size:17px;font-weight:700;color:var(--dim)}
     </svg>
     <button class="btn go big start" id="bPlay">게임 시작</button>
     <div class="trow"><button class="btn" id="bRules">규칙</button></div>
+    <p class="disclaimer">
+      이 프로젝트는 보드게임 『텔레스트레이션』을 구현한 학습 목적의 비공식 팬 프로젝트입니다.<br>
+      본 프로젝트는 비영리이며, 어떠한 수익도 발생시키지 않습니다.<br>
+      『텔레스트레이션』의 명칭 및 관련 상표에 대한 모든 권리는 원권리자에게 있습니다.<br>
+      게임 내 모든 이미지는 이모지 및 AI로 생성한 창작물입니다.<br>
+      원권리자의 요청이 있을 경우 즉시 프로젝트를 비공개 전환 또는 삭제하겠습니다.<br>
+      문의: <a href="mailto:gyolno2@naver.com">gyolno2@naver.com</a>
+    </p>
   </section>
 
   <!-- 문간 -->
@@ -599,13 +608,6 @@ summary{cursor:pointer;font-size:17px;font-weight:700;color:var(--dim)}
         <li>다 보고 나서 <b>제일 마음에 드는 쪽 하나</b>를 뽑습니다. 그림이든 답이든 상관없고, 한 사람이 한 표입니다.</li>
         <li>표를 제일 많이 받은 쪽이 <b>1등</b>입니다.</li>
       </ul>
-      <p class="disclaimer">
-        이 프로젝트는 보드게임 『텔레스트레이션』을 구현한 학습 목적의 비공식 팬 프로젝트입니다.<br>
-        본 프로젝트는 비영리이며, 어떠한 수익도 발생시키지 않습니다.<br>
-        『텔레스트레이션』의 명칭 및 관련 상표에 대한 모든 권리는 원권리자에게 있습니다.<br>
-        원권리자의 요청이 있을 경우 즉시 프로젝트를 비공개 전환 또는 삭제하겠습니다.<br>
-        문의: <a href="mailto:gyolno2@naver.com">gyolno2@naver.com</a>
-      </p>
     </details>
   </section>
 </div>
