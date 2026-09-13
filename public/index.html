@@ -42,9 +42,9 @@ body{
 }
 .wrap{max-width:560px;margin:0 auto}
 /* 짧은 화면(문간·대기실·고르기·기다림)은 위에 몰지 않고 세로 가운데에 앉힌다 */
-body.mid .wrap{min-height:calc(100vh - 52px);display:flex;flex-direction:column;justify-content:center}
-body.mid header{flex:none}
-body.mid .card{flex:none}
+body.mid .wrap,body.wide .wrap{min-height:calc(100vh - 52px);display:flex;flex-direction:column;justify-content:center}
+body.mid header,body.wide header{flex:none}
+body.mid .card,body.wide .card{flex:none}
 .num{font-variant-numeric:tabular-nums}
 .hide{display:none!important}
 .ghost{visibility:hidden!important}   /* 자리는 차지하되 안 보인다 — 화면이 들썩이지 않게 */
@@ -305,7 +305,10 @@ input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-wei
   #sDraw>.prev,#sGuess>.prev{grid-column:2;grid-row:1;transform:none;margin-bottom:6px}
   #sDraw>.sheet,#sGuess>.sheet{grid-column:1;grid-row:1/span 2;margin:0 auto;width:min(100%,calc(100vh - 215px))}
   #sDraw>.side,#sGuess>.side{grid-column:2;grid-row:2;margin-top:0}
-  .side .submit{margin-top:auto}
+  #sGuess>.prev{background:none;border:0;box-shadow:none;padding:8px 0 0;text-align:left;margin-bottom:0}
+  #sGuess>.prev .cap{font-size:24px;font-weight:700;color:var(--ink)}
+  #sGuess>.side label{margin-top:4px}
+  .side .submit{margin-top:6px}
 
   /* 방 안 머리글은 한 줄: ← 레드버튼 · 제목 · 방번호 · 라운드 · 시계. 세로를 아낀다 */
   body:not(.at-title) header{display:flex;align-items:center;gap:14px;margin-bottom:10px}
