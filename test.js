@@ -1,7 +1,7 @@
 // node test.js — 공책이 제대로 도는지, 제시어 카드가 말이 되는지 본다
 import {
   MIN_PLAYERS, MAX_PLAYERS, LEVELS,
-  headOf, pagesOf, kindOfPage, pageOfRound, bookOf, seatOfPage, trim,
+  headOf, pagesOf, kindOfPage, pageOfRound, bookOf, seatOfPage, trim, SECS, secsOf,
 } from './src/rules.js';
 import { EASY, MEDIUM, HARD, card } from './src/words.js';
 
@@ -82,3 +82,12 @@ console.log('공책', MIN_PLAYERS + '~' + MAX_PLAYERS + '명 모두 제자리 �
 console.log('제시어', all.length + '개 (쉬움 ' + EASY.length + ' 보통 ' + MEDIUM.length + ' 어려움 ' + HARD.length + ')');
 for (const [key, lv] of Object.entries(LEVELS)) console.log('  ' + lv.name.padEnd(4), card(Math.random, lv.mix).join(' · '));
 console.log('통과');
+
+/* ── 시간 ── */
+for (const d of SECS) {
+  assert(secsOf(d, 'draw') === d, '그리는 시간 ' + d);
+  assert(secsOf(d, 'guess') >= 20 && secsOf(d, 'guess') <= d, '맞히는 시간 ' + d);
+  assert(secsOf(d, 'pickdraw') > d, '고르고 그리기 ' + d);
+}
+assert(secsOf(999, 'draw') === 60, '모르는 값은 기본으로');
+console.log('시간 통과');

@@ -483,6 +483,12 @@ summary{cursor:pointer;font-size:17px;font-weight:700;color:var(--dim)}
         <button data-v="normal">보통</button>
         <button data-v="hard">어려움</button>
       </div>
+      <label>그리는 시간</label>
+      <div class="pickrow" id="secRow">
+        <button data-v="30">30초</button>
+        <button data-v="60">60초</button>
+        <button data-v="90">90초</button>
+      </div>
     </div>
     <p class="note" id="setupNote"></p>
 
@@ -893,6 +899,7 @@ $('#bVote').onclick = function(){
   send({ t:'vote', b:+bi[0], i:+bi[1] });
 };
 $('#lvRow').onclick = function(e){ var b = e.target.closest('button'); if (b && !b.disabled) send({ t:'set', level:b.dataset.v }); };
+$('#secRow').onclick = function(e){ var b = e.target.closest('button'); if (b && !b.disabled) send({ t:'set', secs:+b.dataset.v }); };
 
 $('#bPickDone').onclick = function(){
   if (S.pickSel < 0) return;
@@ -997,6 +1004,7 @@ function draw(){
     for (var gi = n; gi < 4; gi++) ghosts += '<span class="p ghost"><i class="dot"></i>빈 자리</span>';   // 넷이 될 때까지 빈칸을 보여 준다
     $('#whoLobby').innerHTML = whoHtml(r, false) + ghosts;
     $('#lvRow').querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', b.dataset.v === r.level); b.disabled = !isHost; });
+    $('#secRow').querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', +b.dataset.v === r.secs); b.disabled = !isHost; });
 /* 이건 남긴다 — 다음에 무엇을 하게 되는지가 인원수에 따라 달라진다 */
     $('#setupNote').textContent = n % 2 === 0 ? '짝수 — 고른 말은 내가 그립니다' : '홀수 — 고른 말은 옆 사람이 그립니다';
     $('#bStart').classList.toggle('hide', !isHost);

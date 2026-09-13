@@ -13,7 +13,7 @@ import { DurableObject } from 'cloudflare:workers';
 import { card } from './words.js';
 import {
   MIN_PLAYERS, MAX_PLAYERS, MAX_NAME, MAX_GUESS, MAX_CONN,
-  SEC_PICK, SEC_DRAW, SEC_GUESS, SEC_PICK_DRAW, SEC_VOTE, IDLE_MS,
+  SECS, DEFAULT_SECS, secsOf, SEC_VOTE, IDLE_MS,
   LEVELS, DEFAULT_LEVEL,
   clean, headOf, pagesOf, kindOfPage, pageOfRound, bookOf, seatOfPage, trim,
 } from './rules.js';
@@ -45,7 +45,7 @@ export class Room extends DurableObject {
     if (!this.r) {                                   // 첫 사람이 방을 연다
       this.r = {
         code, host: pid, phase: 'lobby', round: 0, deadline: 0,
-        level: DEFAULT_LEVEL,
+        level: DEFAULT_LEVEL, secs: DEFAULT_SECS,
         players: [], cards: {}, done: [], reveal: { b: 0, i: -1 }, votes: {}, touched: Date.now(),
       };
     }
@@ -88,7 +88,7 @@ export class Room extends DurableObject {
     const live = new Set(this.ctx.getWebSockets().map(w => this.who(w).pid));
     const v = {
       t: 'room', code: r.code, phase: r.phase, round: r.round, rounds: n,
-      host: r.host, me: pid, seat: s, level: r.level,
+      host: r.host, me: pid, seat: s, level: r.level, secs: r.secs || DEFAULT_SECS,
       players: r.players.map(p => ({ pid: p.pid, name: p.name, on: live.has(p.pid) })),
       left: Math.max(0, Math.round((r.deadline - Date.now()) / 1000)),
       waiting: r.players.filter(p => !r.done.includes(p.pid)).map(p => p.name),
@@ -215,9 +215,10 @@ export class Room extends DurableObject {
     if (next) r.host = next.pid;
   }
 
-  /** 대기실에서 방장이 고르는 것 — 제시어 난이도 */
+  /** 대기실에서 방장이 고르는 것 — 제시어 난이도, 그리는 시간 */
   set(m) {
     if (LEVELS[m.level]) this.r.level = m.level;
+    if (SECS.includes(m.secs | 0)) this.r.secs = m.secs | 0;
   }
 
   /* ── 판 ── */
@@ -230,7 +231,7 @@ export class Room extends DurableObject {
     r.cards = {};
     for (const p of r.players) r.cards[p.pid] = card(Math.random, mix);
     r.phase = 'pick'; r.round = 1; r.done = []; r.votes = {}; r.reveal = { b: 0, i: -1 }; r.started = Date.now();
-    await this.clock(headOf(n) === 2 ? SEC_PICK_DRAW : SEC_PICK);
+    await this.clock(secsOf(r.secs, headOf(n) === 2 ? 'pickdraw' : 'pick'));
   }
 
   /** 카드에서 말을 고른다 — 자기 공책 0쪽 */
@@ -280,7 +281,7 @@ export class Room extends DurableObject {
       return;
     }
     r.round += 1; r.phase = 'play'; r.done = [];
-    await this.clock(kindOfPage(pageOfRound(r.round, n)) === 'draw' ? SEC_DRAW : SEC_GUESS);
+    await this.clock(secsOf(r.secs, kindOfPage(pageOfRound(r.round, n))));
   }
 
   /** 시간이 다 됐다 — 안 낸 자리는 빈 쪽으로 메운다. 한 사람 때문에 판이 멈추지 않게 */
