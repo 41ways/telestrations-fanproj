@@ -117,6 +117,7 @@ header{margin-bottom:14px}
   .title .ink .fc,.title .ink .sh,.title .squig path{animation:none;stroke-dashoffset:0;fill-opacity:1;opacity:1;stroke-width:0}
   .title .ink g[class^="l"]{animation:none}
   .title .art g[class^="a-"],.title .art .a-gir path,.title .art .a-gir circle{animation:none;opacity:1;stroke-dashoffset:0;fill-opacity:1}
+  .title .start,.title .trow{animation:none;opacity:1}
 }
 .title .logo b{font-size:clamp(40px,11.5vw,84px)}
 .title .squig{width:min(300px,72%);height:12px;margin:0 auto}
@@ -138,6 +139,9 @@ header{margin-bottom:14px}
 .art{display:block;width:100%;max-width:340px;margin:26px auto 0;position:relative;z-index:1}
 .title .start{margin-top:26px;width:100%;max-width:520px;padding:13px 48px}
 .trow{display:flex;gap:22px;margin-top:22px}
+/* 시작 단추와 규칙은 그림이 튀어나올 때 같이 — 스케치북(2.15s) 바로 뒤에 */
+.title .start,.title .trow{opacity:0;animation:popup .45s cubic-bezier(.2,1.4,.4,1) 2.35s forwards}
+.title .trow{animation-delay:2.55s}
 .trow .btn{border:0;background:none;box-shadow:none;padding:2px 0;font-size:16px;color:var(--dim);
   border-bottom:3px solid transparent;border-radius:0}
 .trow .btn:hover{color:var(--orange);border-bottom-color:var(--orange)}
