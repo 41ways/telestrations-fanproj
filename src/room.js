@@ -13,7 +13,7 @@ import { DurableObject } from 'cloudflare:workers';
 import { card } from './words.js';
 import {
   MIN_PLAYERS, MAX_PLAYERS, MAX_NAME, MAX_GUESS, MAX_CONN,
-  SEC_PICK, SEC_DRAW, SEC_GUESS, SEC_PICK_DRAW, IDLE_MS,
+  SEC_PICK, SEC_DRAW, SEC_GUESS, SEC_PICK_DRAW, SEC_VOTE, IDLE_MS,
   LEVELS, DEFAULT_LEVEL,
   clean, headOf, pagesOf, kindOfPage, pageOfRound, bookOf, seatOfPage, trim,
 } from './rules.js';
@@ -46,7 +46,7 @@ export class Room extends DurableObject {
       this.r = {
         code, host: pid, phase: 'lobby', round: 0, deadline: 0,
         level: DEFAULT_LEVEL,
-        players: [], cards: {}, done: [], reveal: { b: 0, i: 0 }, votes: {}, touched: Date.now(),
+        players: [], cards: {}, done: [], reveal: { b: 0, i: -1 }, votes: {}, touched: Date.now(),
       };
     }
 
@@ -110,25 +110,41 @@ export class Room extends DurableObject {
       v.owner = r.players[b] ? r.players[b].name : '';
     }
 
-    if (r.phase === 'reveal' || r.phase === 'done') {
+    /* 공개 — 한 권씩. i 는 -1(표지: 누구 공책인지만) → 0..last(쪽) → last+1(끝 도장) */
+    if (r.phase === 'reveal') {
       const { b, i } = r.reveal;
-      const last = r.phase === 'done' ? pagesOf(n) - 1 : i;   // 끝난 뒤에는 공책을 통째로 편다
       v.reveal = { b, i, owner: r.players[b] ? r.players[b].name : '', of: n, pages: pagesOf(n) };
       v.pages = [];
-      for (let k = 0; k <= last && k < pagesOf(n); k++) {
+      for (let k = 0; k <= i && k < pagesOf(n); k++) {
         const pg = await this.page(b, k);
-        v.pages.push(pg && {
-          ...pg,
-          by: r.players[pg.s] ? r.players[pg.s].name : '',
-          votes: Object.values(r.votes).filter(x => x === b + ':' + k).length,
-        });
+        v.pages.push(pg && { ...pg, by: r.players[pg.s] ? r.players[pg.s].name : '' });
       }
-      v.myVote = r.votes[pid] || null;
-      v.voted = Object.keys(r.votes).length;
     }
 
+    /* 투표·끝 — 공책 전체는 크니까 여기 실지 않고, 화면이 한 번만 따로 청한다(album) */
+    if (r.phase === 'vote' || r.phase === 'done') {
+      v.album = { key: this.albumKey(), of: n, pages: pagesOf(n) };
+      v.myVote = r.votes[pid] || null;
+      v.voted = Object.keys(r.votes).length;
+      v.voters = r.players.filter(p => live.has(p.pid)).length;
+    }
     if (r.phase === 'done') v.top = await this.winner();
     return v;
+  }
+
+  albumKey() { return this.r.code + ':' + (this.r.started || 0); }
+
+  /** 공책 전부 — 한 권에 한 통씩. 투표할 때와 끝나고 다시 볼 때 */
+  async album(ws) {
+    const r = this.r, n = r.players.length, key = this.albumKey();
+    for (let b = 0; b < n; b++) {
+      const pages = [];
+      for (let k = 0; k < pagesOf(n); k++) {
+        const pg = await this.page(b, k);
+        pages.push(pg && { ...pg, by: r.players[pg.s] ? r.players[pg.s].name : '' });
+      }
+      try { ws.send(JSON.stringify({ t: 'book', key, b, of: n, owner: r.players[b] ? r.players[b].name : '', pages })); } catch {}
+    }
   }
 
   /* ── 받기 ── */
@@ -147,8 +163,9 @@ export class Room extends DurableObject {
       else if (m.t === 'head' && r.phase === 'pick') await this.head(pid, m.s);
       else if (m.t === 'draw' && r.phase === 'play') await this.hand(pid, { strokes: m.s });
       else if (m.t === 'guess' && r.phase === 'play') await this.hand(pid, { word: clean(m.w, MAX_GUESS) });
-      else if (m.t === 'turn' && isHost && (r.phase === 'reveal' || r.phase === 'done')) await this.turn(m.d);
-      else if (m.t === 'vote' && (r.phase === 'reveal' || r.phase === 'done')) this.vote(pid, m.b, m.i);
+      else if (m.t === 'turn' && isHost && r.phase === 'reveal') await this.turn(m.d);
+      else if (m.t === 'album' && (r.phase === 'vote' || r.phase === 'done')) { await this.album(ws); return; }
+      else if (m.t === 'vote' && r.phase === 'vote') await this.vote(pid, m.b, m.i);
       else if (m.t === 'again' && isHost && r.phase === 'done') await this.again();
       else if (m.t === 'pass' && isHost) await this.pass(pid, m.to);
       else return;
@@ -212,7 +229,7 @@ export class Room extends DurableObject {
     const mix = (LEVELS[r.level] || LEVELS[DEFAULT_LEVEL]).mix;
     r.cards = {};
     for (const p of r.players) r.cards[p.pid] = card(Math.random, mix);
-    r.phase = 'pick'; r.round = 1; r.done = []; r.votes = {}; r.reveal = { b: 0, i: 0 };
+    r.phase = 'pick'; r.round = 1; r.done = []; r.votes = {}; r.reveal = { b: 0, i: -1 }; r.started = Date.now();
     await this.clock(headOf(n) === 2 ? SEC_PICK_DRAW : SEC_PICK);
   }
 
@@ -258,7 +275,7 @@ export class Room extends DurableObject {
   async next() {
     const r = this.r, n = r.players.length;
     if (r.round >= n) {
-      r.phase = 'reveal'; r.round = n; r.deadline = 0; r.reveal = { b: 0, i: 0 };
+      r.phase = 'reveal'; r.round = n; r.deadline = 0; r.reveal = { b: 0, i: -1 };
       await this.ctx.storage.setAlarm(Date.now() + IDLE_MS);
       return;
     }
@@ -285,29 +302,39 @@ export class Room extends DurableObject {
     await this.next();
   }
 
+  /**
+   * 방장이 한 걸음 넘긴다. 한 권은 표지(-1) → 쪽들 → 끝(last+1) 순으로 지나가고,
+   * 마지막 권의 끝을 넘기면 투표로 간다.
+   */
   async turn(d) {
     const r = this.r, n = r.players.length, last = pagesOf(n) - 1;
     let { b, i } = r.reveal;
-    /* 판이 끝난 뒤에는 한 쪽씩이 아니라 공책째로 넘긴다 — 되짚어 볼 때는 그게 편하다 */
-    if (r.phase === 'done') {
-      r.reveal = { b: Math.max(0, Math.min(n - 1, b + (d > 0 ? 1 : -1))), i: last };
-      return;
-    }
-    if (d > 0) { i += 1; if (i > last) { b += 1; i = 0; } }
-    else { i -= 1; if (i < 0) { b -= 1; i = last; } }
-    if (b >= n) { r.phase = 'done'; r.reveal = { b: n - 1, i: last }; return; }
-    if (b < 0) { b = 0; i = 0; }
+    if (d > 0) { i += 1; if (i > last + 1) { b += 1; i = -1; } }
+    else { i -= 1; if (i < -1) { b -= 1; i = last + 1; } }
+    if (b >= n) { r.phase = 'vote'; r.reveal = { b: n - 1, i: last + 1 }; r.votes = {}; await this.clock(SEC_VOTE); return; }
+    if (b < 0) { b = 0; i = -1; }
     r.reveal = { b, i };
   }
 
   /**
-   * 한 사람이 한 표. 판 전체에서 제일 마음에 든 쪽 하나를 뽑는다 —
-   * 그림인지 답인지는 가리지 않는다. 뽑은 걸 다시 누르면 거둔다.
+   * 한 사람이 한 표. 판 전체에서 제일 마음에 든 쪽 하나를 뽑는다 — 그림인지 답인지는 가리지 않는다.
+   * 한 번 내면 못 바꾼다(화면에서 확인을 거친다). 붙어 있는 사람이 다 내면 바로 결과로 간다.
    */
-  vote(pid, b, i) {
-    const r = this.r, k = (b | 0) + ':' + (i | 0);
-    if (r.votes[pid] === k) delete r.votes[pid];
-    else r.votes[pid] = k;
+  async vote(pid, b, i) {
+    const r = this.r, n = r.players.length;
+    if (r.players.findIndex(p => p.pid === pid) < 0 || r.votes[pid]) return;   // 구경꾼은 못 뽑는다
+    b |= 0; i |= 0;
+    if (b < 0 || b >= n || i < 0 || i >= pagesOf(n)) return;
+    r.votes[pid] = b + ':' + i;
+    const live = new Set(this.ctx.getWebSockets().map(w => this.who(w).pid));
+    const voters = r.players.filter(p => live.has(p.pid) || r.votes[p.pid]);
+    if (voters.every(p => r.votes[p.pid])) await this.finish();
+  }
+
+  async finish() {
+    const r = this.r;
+    r.phase = 'done'; r.deadline = 0;
+    await this.ctx.storage.setAlarm(Date.now() + IDLE_MS);
   }
 
   /** 표를 제일 많이 받은 쪽. 같은 표로 갈리면 갈린 대로 다 돌려준다 */
@@ -353,6 +380,10 @@ export class Room extends DurableObject {
     if (Date.now() - r.touched > IDLE_MS) { await this.ctx.storage.deleteAll(); this.r = null; return; }
     if ((r.phase === 'pick' || r.phase === 'play') && r.deadline && Date.now() >= r.deadline - 500) {
       await this.fill();
+      await this.save();
+      await this.pushAll();
+    } else if (r.phase === 'vote' && r.deadline && Date.now() >= r.deadline - 500) {
+      await this.finish();                           // 표를 안 낸 사람은 기권
       await this.save();
       await this.pushAll();
     } else {

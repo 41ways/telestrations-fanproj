@@ -71,6 +71,7 @@ header{margin-bottom:14px}
   padding:clamp(36px,8vh,80px) 0 clamp(30px,6vh,60px)}
 .title .back{position:absolute;left:0;top:0;margin:0}
 .title .logo{justify-content:center;margin:0;gap:7px;width:100%}   /* 그래야 안의 SVG 제목이 화면 폭만큼 커진다 */
+.title #fanfare{top:calc(clamp(44px,11vh,110px) + 30px)}
 .title .ink{width:min(720px,100%);height:auto;overflow:visible;display:block;font-family:"Jua",sans-serif;font-weight:700}
 /* 글자마다: 테두리를 크레용으로 긋고(trace) → 속을 칠하며 테두리를 걷고(fillin) → 그림자가 붙고 → 둥둥 떠다닌다(bob) */
 .title .ink .fc{stroke-width:6;stroke-linejoin:round;stroke-linecap:round;fill-opacity:0;
@@ -118,17 +119,21 @@ header{margin-bottom:14px}
 }
 .title .logo b{font-size:clamp(40px,11.5vw,84px)}
 .title .squig{width:min(300px,72%);height:12px;margin:0 auto}
-/* 타이틀 빵빠레 — 열릴 때 한 번, 제목 둘레에서 조각 몇 개가 튀어 올랐다 떨어진다 */
-.fanfare{position:absolute;left:50%;top:calc(clamp(44px,11vh,110px) + 30px);width:min(440px,104%);height:0;
-  transform:translateX(-50%);pointer-events:none;z-index:2}
-.fanfare i{position:absolute;top:0;border-radius:2px;opacity:0;animation:pop 1.8s forwards;will-change:transform}
-@keyframes pop{
-  0%{opacity:0;transform:translate(0,14px) scale(.5) rotate(0);animation-timing-function:cubic-bezier(.15,.8,.3,1)}
-  14%{opacity:1;transform:translate(calc(var(--dx) * .45),var(--peak)) scale(1) rotate(calc(var(--rot) * .2));animation-timing-function:cubic-bezier(.45,0,.8,.45)}
-  82%{opacity:1}
-  100%{opacity:0;transform:translate(var(--dx),var(--fall)) rotate(var(--rot))}
-}
-@media (prefers-reduced-motion:reduce){.fanfare{display:none}}
+/* 빵빠레 — 조각마다 가로(i: 밀려나며 느려짐)·세로(b: 솟았다 떨어짐)·팔랑(u: 뒤집힘)을 따로 움직여야 포물선이 된다 */
+.burst{position:absolute;left:0;top:0;width:100%;height:0;pointer-events:none;z-index:5;overflow:visible}
+.burst.full{position:fixed;inset:0;height:auto;z-index:60;overflow:hidden}
+.burst i{position:absolute;left:var(--x);top:var(--y);display:block;width:0;height:0;
+  animation:bx var(--t) cubic-bezier(.15,.55,.45,1) var(--d) both}
+.burst i b{position:absolute;display:block;left:0;top:0;width:0;height:0;animation:by var(--t) linear var(--d) both}
+.burst i u{position:absolute;display:block;width:var(--w);height:var(--h);margin:calc(var(--h) / -2) 0 0 calc(var(--w) / -2);
+  background:var(--c);border-radius:var(--rd);animation:flip var(--f) linear infinite;backface-visibility:visible}
+@keyframes bx{0%{transform:translateX(0);opacity:1}80%{opacity:1}100%{transform:translateX(var(--dx));opacity:0}}
+@keyframes by{
+  0%{transform:translateY(0) rotate(0) scale(.5);animation-timing-function:cubic-bezier(.1,.75,.35,1)}
+  38%{transform:translateY(var(--peak)) rotate(var(--r1)) scale(1);animation-timing-function:cubic-bezier(.55,.05,.85,.4)}
+  100%{transform:translateY(var(--fall)) rotate(var(--r2)) scale(1)}}
+@keyframes flip{to{transform:rotate3d(1,.4,0,360deg)}}
+@media (prefers-reduced-motion:reduce){.burst{display:none}}
 .art{display:block;width:100%;max-width:340px;margin:26px auto 0;position:relative;z-index:1}
 .title .start{margin-top:26px;width:100%;max-width:520px;padding:13px 48px}
 .trow{display:flex;gap:22px;margin-top:22px}
@@ -315,15 +320,27 @@ input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-wei
 /* ── 공개 — 스케치북 한 권. 지금 쪽 하나가 크게, 지난 쪽은 아래에 작게 ── */
 .book{position:relative;margin-top:10px}
 .stage{position:relative;min-height:80px}
-.pg{position:relative;border:3px solid var(--ink);border-radius:14px;padding:12px 13px 11px;box-shadow:5px 5px 0 var(--yellow);
+.pg{position:relative;border:3px solid var(--ink);border-radius:14px;padding:12px 13px 11px;box-shadow:5px 5px 0 var(--yellow);display:flex;flex-direction:column;
   background:var(--card) radial-gradient(#ede3cf 1.1px,transparent 1.3px) 0 0/20px 20px}
 .stage .pg.now{animation:settle .32s ease-out}
 @keyframes settle{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.stage .pg.now{animation:none}}
 .pg .by{display:flex;align-items:center;gap:8px;font-size:15px;color:var(--dim);margin-bottom:6px}
-.pg .by .star{margin-left:auto;font:inherit;font-size:19px;border:0;background:none;cursor:pointer;color:var(--dim);padding:0 4px}
-.pg .by .star.on{color:var(--orange)}
 .pg .said{font-size:clamp(22px,6vw,28px);font-weight:700;line-height:1.2;word-break:keep-all}
+/* 무대 위 쪽은 말이든 그림이든 같은 크기 — 넘길 때 판이 들썩이지 않게 */
+.stage .pg{aspect-ratio:1}
+.stage .pg .said{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;font-size:clamp(28px,5vw,44px);padding:0 10px}
+.stage .pg.cover{background-color:var(--yellow);align-items:center;justify-content:center;text-align:center;gap:10px}
+.stage .pg.cover .said{flex:0;font-size:clamp(26px,4.6vw,40px)}
+.stage .pg.cover .said b{color:var(--orange)}
+.stage .pg.cover .hint{font-size:17px;color:var(--dim)}
+.stage .pg.cover .q{font-size:clamp(70px,14vw,120px);line-height:1;color:var(--ink);opacity:.18;font-weight:700}
+/* 한 권이 끝났다 — 마지막 쪽 위에 도장이 쾅 */
+.stamp{position:absolute;right:6%;bottom:9%;font-size:clamp(44px,7vw,74px);font-weight:700;color:#e03131;line-height:1.15;
+  border:5px solid #e03131;border-radius:16px;padding:2px 18px 0;transform:rotate(-14deg);opacity:.88;
+  animation:stamp .38s cubic-bezier(.2,1.5,.4,1) both;pointer-events:none;background:rgba(255,253,248,.55)}
+@keyframes stamp{from{opacity:0;transform:rotate(-14deg) scale(2.6)}to{opacity:.88;transform:rotate(-14deg) scale(1)}}
+@media (prefers-reduced-motion:reduce){.stamp{animation:none}}
 /* 그림을 보여 주는 자리. 폭을 여기서 못 박아 둬야 한다 — 캔버스는 폭이 없으면
    다시 그릴 때마다 제 속성값을 따라 한없이 커진다 */
 .shot{width:100%;aspect-ratio:1;border-radius:12px;background:var(--card);border:3px solid var(--ink);display:block}
@@ -348,11 +365,33 @@ input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-wei
   #sReveal>.past{grid-column:2;margin-top:6px;max-height:calc(100vh - 330px);overflow:auto;padding:4px}
 }
 
+/* ── 공책첩 — 투표할 때와 끝나고 다시 볼 때. 한 권씩 탭으로, 쪽들은 격자로 ── */
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.tabs button{font:inherit;font-size:15px;font-weight:700;padding:5px 12px;border:3px solid var(--ink);border-radius:11px;
+  background:#fff;color:var(--ink);cursor:pointer;box-shadow:2px 2px 0 var(--ink)}
+.tabs button.on{background:var(--yellow)}
+.alb{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px;margin-top:14px;padding:5px;
+  max-height:calc(100vh - 330px);overflow:auto}
+.alb .pg{aspect-ratio:1;padding:8px 10px 9px;box-shadow:3px 3px 0 var(--ink)}
+.alb .pg .by{font-size:13px;padding-right:44px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.alb .pg .tab{font-size:12px;padding:0 8px}
+.alb .pg .said{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;font-size:20px;padding:0 4px}
+.alb .pg .shot{border-width:2px}
+.alb.pick .pg{cursor:pointer;transition:transform .12s}
+.alb.pick .pg:hover{transform:translateY(-2px)}
+.alb .pg.on{outline:4px solid var(--orange);outline-offset:3px;background-color:#fff3e0}
+.alb .pg.on .tab{background:var(--orange);color:#fff}
+#albSel{font-size:17px;margin:12px 0 0;min-height:24px}
+#albSel b{color:var(--orange)}
+@media (min-width:760px){
+  #sAlbum .alb{grid-template-columns:repeat(6,minmax(0,1fr))}
+}
+
 /* ── 1등 ── */
 .crown{font-size:20px;color:var(--dim);margin:0 0 9px;display:flex;align-items:center;gap:7px}
 .crown b{font-size:26px}
 #top{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
-#top .crown,#top .confetti{grid-column:1/-1}
+#top .crown{grid-column:1/-1}
 .win .shot{width:min(100%,calc(100vh - 360px));margin:0 auto}
 .win{border:3px solid var(--ink);border-radius:18px;background:var(--yellow);padding:13px;
   box-shadow:4px 4px 0 var(--ink);margin-bottom:4px;transform:rotate(-.6deg)}
@@ -360,10 +399,6 @@ input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-wei
 .win .who b{font-size:21px;color:var(--ink)}
 .win .who i{margin-left:auto;font-style:normal;font-weight:700}
 .win .said{font-size:clamp(24px,7vw,32px);font-weight:700;line-height:1.2;word-break:keep-all}
-.confetti{position:relative;height:0;overflow:visible;pointer-events:none}
-.confetti i{position:absolute;top:-12px;width:9px;height:16px;border-radius:2px;opacity:0;animation:fall 2.6s ease-in forwards}
-@keyframes fall{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(240px) rotate(540deg)}}
-@media (prefers-reduced-motion:reduce){.confetti{display:none}}
 
 .scribble{display:block;width:min(300px,80%);margin:4px auto 10px}
 .scribble path{stroke-dasharray:520;stroke-dashoffset:520;animation:scrib 2.6s ease-in-out infinite}
@@ -401,7 +436,7 @@ summary{cursor:pointer;font-size:17px;font-weight:700;color:var(--dim)}
   <!-- 타이틀 -->
   <section class="title" id="sTitle">
     <a class="back" href="https://41ways.github.io/norara/">← 레드버튼</a>
-    <div class="fanfare" id="fanfare" aria-hidden="true"></div>
+    <div class="burst" id="fanfare" aria-hidden="true"></div>
     <h1 class="logo draw" aria-label="텔레스트레이션">
       <svg class="ink" viewBox="0 0 540 112" font-size="70" aria-hidden="true"><g class="l1"><text class="sh" x="28" y="85" rotate="-4">텔</text><text class="fc" x="26" y="83" rotate="-4" style="stroke:#e03131;fill:#e03131">텔</text></g><g class="l2"><text class="sh" x="99" y="85" rotate="3">레</text><text class="fc" x="97" y="83" rotate="3" style="stroke:#e8590c;fill:#e8590c">레</text></g><g class="l3"><text class="sh" x="170" y="85" rotate="-2">스</text><text class="fc" x="168" y="83" rotate="-2" style="stroke:#ffd43b;fill:#ffd43b">스</text></g><g class="l4"><text class="sh" x="241" y="85" rotate="4">트</text><text class="fc" x="239" y="83" rotate="4" style="stroke:#51cf66;fill:#51cf66">트</text></g><g class="l5"><text class="sh" x="312" y="85" rotate="-3">레</text><text class="fc" x="310" y="83" rotate="-3" style="stroke:#74c0fc;fill:#74c0fc">레</text></g><g class="l6"><text class="sh" x="383" y="85" rotate="2">이</text><text class="fc" x="381" y="83" rotate="2" style="stroke:#f06595;fill:#f06595">이</text></g><g class="l7"><text class="sh" x="454" y="85" rotate="-4">션</text><text class="fc" x="452" y="83" rotate="-4" style="stroke:#e8590c;fill:#e8590c">션</text></g></svg>
     </h1>
@@ -506,12 +541,23 @@ summary{cursor:pointer;font-size:17px;font-weight:700;color:var(--dim)}
       <button class="btn sm" id="bPrev">뒤로</button>
       <button class="btn go" id="bNext">다음</button>
     </div>
-    <div class="row hide" id="peekBtns"><button class="btn sm" id="bWinner">1등 보기</button></div>
     <p class="note" id="revNote"></p>
     <div class="past" id="past"></div>
   </section>
 
+  <!-- 공책첩 — 투표 / 다시 보기 -->
+  <section class="card hide" id="sAlbum">
+    <p class="lede" id="albLede"></p>
+    <div class="tabs" id="albTabs"></div>
+    <div class="alb" id="albGrid"></div>
+    <p id="albSel"></p>
+    <div class="row" id="albPick"><button class="btn go big" id="bVote" disabled>이걸로 정하기</button></div>
+    <div class="row hide" id="albBack"><button class="btn sm" id="bWinner">1등 보기</button></div>
+    <p class="note" id="albNote"></p>
+  </section>
+
   <!-- 끝 -->
+  <div class="burst full" id="cheer" aria-hidden="true"></div>
   <section class="card hide" id="sDone">
     <div id="top"></div>
     <div class="row"><button class="btn go big" id="bAgain">한 판 더</button></div>
@@ -730,6 +776,12 @@ function connect(){
   ws.onmessage = function(ev){
     var m; try { m = JSON.parse(ev.data); } catch (e) { return; }
     if (m.t === 'err') { toast(m.m); return; }
+    if (m.t === 'book') {                                        // 공책첩 — 한 권씩 온다. 다 오면 편다
+      if (!S.albumBuf || S.albumBuf.key !== m.key) S.albumBuf = { key:m.key, books:[] };
+      S.albumBuf.books[m.b] = { owner:m.owner, pages:m.pages };
+      if (S.albumBuf.books.filter(Boolean).length >= m.of) { S.album = S.albumBuf; S.albFor = null; draw(); }
+      return;
+    }
     if (m.t !== 'room') return;
     var was = S.room;
     S.room = m;
@@ -751,26 +803,39 @@ $('#nm').value = S.name;
 $('#bPlay').onclick = function(){ S.entered = true; draw(); $('#nm').focus(); };
 
 /* 타이틀이 열릴 때 딱 한 번. 제목 양끝에서 폭죽처럼 — 조각마다 크기·모양·궤적·박자가 다르다 */
+/**
+ * 색종이 조각들을 쏜다. 조각마다 어디서(x %, y px) 어느 쪽으로(dir) 얼마나 높이 어디까지가 다르다.
+ * 모두 포물선으로 솟았다가 팔랑이며 떨어진다. far 는 멀리 쏠 때의 배율
+ */
+function burst(el, shots, far){
+  var h = '', rnd = Math.random, spread = far || 1;
+  shots.forEach(function(sh){
+    for (var i = 0; i < sh.n; i++) {
+      var dx = sh.dir * (20 + rnd() * 160) * spread;
+      var peak = -(70 + rnd() * 150) * spread, fall = (180 + rnd() * 160) * spread;
+      var w = 6 + rnd() * 7, hg = 8 + rnd() * 12, round = rnd() < .3;
+      h += '<i style="--x:' + (sh.x + (rnd() * 6 - 3)).toFixed(1) + '%;--y:' + sh.y + 'px;'
+        + '--dx:' + dx.toFixed(0) + 'px;--peak:' + peak.toFixed(0) + 'px;--fall:' + fall.toFixed(0) + 'px;'
+        + '--r1:' + ((rnd() - .5) * 240).toFixed(0) + 'deg;--r2:' + ((rnd() - .5) * 900).toFixed(0) + 'deg;'
+        + '--t:' + (1.6 + rnd() * .9).toFixed(2) + 's;--d:' + (rnd() * .35).toFixed(2) + 's;--f:' + (.5 + rnd() * .6).toFixed(2) + 's">'
+        + '<b><u style="--w:' + w.toFixed(0) + 'px;--h:' + (round ? w : hg).toFixed(0) + 'px;--rd:' + (round ? '50%' : '2px')
+        + ';--c:' + PENS[1 + Math.floor(rnd() * (PENS.length - 1))] + '"></u></b></i>';
+    }
+  });
+  el.innerHTML = h;
+  setTimeout(function(){ el.innerHTML = ''; }, 3200);
+}
+/* 타이틀이 열릴 때 딱 한 번 — 제목 양끝에서 바깥쪽으로 */
 function fanfare(){
   if (S.fanfared || !document.body.classList.contains('at-title')) return;
   S.fanfared = true;
-  var h = '', rnd = Math.random;
-  for (var i = 0; i < 22; i++) {
-    var side = i % 2 ? 1 : -1;                                   // 왼쪽·오른쪽 번갈아
-    var dx = side * (30 + rnd() * 120);                          // 바깥쪽으로 흩어진다
-    var peak = -(60 + rnd() * 120), fall = 170 + rnd() * 130;
-    var rot = (rnd() < .5 ? -1 : 1) * (240 + rnd() * 540);
-    var w = 6 + rnd() * 6, hg = 9 + rnd() * 11, round = rnd() < .3;
-    h += '<i style="left:' + (50 + side * (18 + rnd() * 12)).toFixed(0) + '%;'
-      + '--dx:' + dx.toFixed(0) + 'px;--peak:' + peak.toFixed(0) + 'px;--fall:' + fall.toFixed(0) + 'px;--rot:' + rot.toFixed(0) + 'deg;'
-      + 'width:' + w.toFixed(0) + 'px;height:' + (round ? w : hg).toFixed(0) + 'px;' + (round ? 'border-radius:50%;' : '')
-      + 'background:' + PENS[(i * 3) % PENS.length] + ';'
-      + 'animation-delay:' + (rnd() * .3).toFixed(2) + 's;animation-duration:' + (1.5 + rnd() * .7).toFixed(2) + 's"></i>';
-  }
-  $('#fanfare').innerHTML = h;
-  setTimeout(function(){ $('#fanfare').innerHTML = ''; }, 2800);
+  burst($('#fanfare'), [{ x:22, y:0, dir:-1, n:14 }, { x:78, y:0, dir:1, n:14 }]);
 }
 setTimeout(fanfare, 3800);
+/* 1등이 뜰 때 — 화면 아래 양 귀퉁이에서 가운데로 폭죽처럼 */
+function cheer(){
+  burst($('#cheer'), [{ x:4, y:window.innerHeight - 20, dir:1, n:28 }, { x:96, y:window.innerHeight - 20, dir:-1, n:28 }], 2.2);
+}
 $('#bRules').onclick = function(){
   document.body.classList.add('rules');
   var d = document.querySelector('#rulesCard details'); d.open = true;
@@ -808,10 +873,21 @@ $('#bCopy').onclick = function(){
 };
 $('#bStart').onclick = function(){ send({ t:'start' }); };
 $('#bAgain').onclick = function(){ send({ t:'again' }); };
-$('#bPeek').onclick = function(){ S.peek = true; draw(); };      // 끝난 뒤 공책을 다시 넘겨 본다
+$('#bPeek').onclick = function(){ S.peek = true; draw(); };      // 끝난 뒤 공책첩을 다시 편다
 $('#bWinner').onclick = function(){ S.peek = false; draw(); };
 $('#bNext').onclick = function(){ send({ t:'turn', d:1 }); };
 $('#bPrev').onclick = function(){ send({ t:'turn', d:-1 }); };
+$('#albTabs').onclick = function(e){ var b = e.target.closest('button'); if (!b) return; S.albB = +b.dataset.b; S.albFor = null; draw(); };
+$('#albGrid').onclick = function(e){
+  var r = S.room, pg = e.target.closest('.pg'); if (!pg || !r || r.phase !== 'vote' || r.myVote) return;
+  S.albSel = pg.dataset.v;                                        // 눌러서 표시만. 「이걸로 정하기」로 낸다
+  S.albFor = null; draw();
+};
+$('#bVote').onclick = function(){
+  if (!S.albSel) return;
+  var bi = S.albSel.split(':');
+  send({ t:'vote', b:+bi[0], i:+bi[1] });
+};
 $('#lvRow').onclick = function(e){ var b = e.target.closest('button'); if (b && !b.disabled) send({ t:'set', level:b.dataset.v }); };
 
 $('#bPickDone').onclick = function(){
@@ -836,13 +912,13 @@ $('#bGuessDone').onclick = function(){
 $('#gw').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('#bGuessDone').click(); });
 
 // ══════════════════════════════ 그리기(화면)
-var SECTIONS = ['#sTitle','#sGate','#sLobby','#sPick','#sDraw','#sGuess','#sWait','#sReveal','#sDone'];
+var SECTIONS = ['#sTitle','#sGate','#sLobby','#sPick','#sDraw','#sGuess','#sWait','#sReveal','#sAlbum','#sDone'];
 /** 한 화면만 남긴다. 끝 화면처럼 둘을 같이 띄워야 할 때는 여럿을 넘긴다 */
 function show(){
   var want = [].slice.call(arguments);
   var main = want[0];
   /* 그리기·맞히기·공책은 넓게, 나머지 짧은 화면은 560 으로 모아 세로 가운데에 */
-  document.body.classList.toggle('wide', main === '#sDraw' || main === '#sGuess' || main === '#sReveal');
+  document.body.classList.toggle('wide', main === '#sDraw' || main === '#sGuess' || main === '#sReveal' || main === '#sAlbum');
   document.body.classList.toggle('mid', main === '#sGate' || main === '#sLobby' || main === '#sPick' || main === '#sWait' || main === '#sDone');
   SECTIONS.forEach(function(s){
     var el = $(s), was = !el.classList.contains('hide'), now = want.indexOf(s) >= 0;
@@ -864,7 +940,7 @@ function clock(r){
   var c = $('#clock');
   clearInterval(S.tick);
   c.classList.remove('hide');
-  if (!r.left || (r.phase !== 'pick' && r.phase !== 'play')) { c.classList.add('ghost'); c.classList.remove('hot'); return; }
+  if (!r.left || (r.phase !== 'pick' && r.phase !== 'play' && r.phase !== 'vote')) { c.classList.add('ghost'); c.classList.remove('hot'); return; }
   var end = Date.now() + r.left * 1000;
   c.classList.remove('ghost');
   var beat = function(){
@@ -884,6 +960,7 @@ function autoHand(){
   if (!r || S.sent || r.done) return;
   if (!$('#sDraw').classList.contains('hide') && pad.strokes.length) $('#bDrawDone').click();
   else if (!$('#sGuess').classList.contains('hide') && ($('#gw').value || '').trim()) $('#bGuessDone').click();
+  else if (r.phase === 'vote' && !r.myVote && S.albSel) $('#bVote').click();   // 골라만 두고 안 냈으면 그걸로
 }
 
 /** 새 쪽을 맡을 때만 그림판을 비운다. 같은 쪽을 다시 그리는 중이면 남겨 둔다 */
@@ -909,7 +986,7 @@ function draw(){
   var n = r.players.length;
 
   if (r.phase === 'lobby') {
-    S.peek = false;
+    S.peek = false; S.albSel = null;
     show('#sLobby');
     $('#lobbyCode').textContent = r.code;
     var ghosts = '';
@@ -982,78 +1059,112 @@ function draw(){
     return;
   }
 
-  if (r.phase === 'reveal' || r.phase === 'done') {
-    var rev = r.reveal;
+  if (r.phase === 'reveal') {
+    var rev = r.reveal, last = rev.pages - 1;
     $('#step').textContent = (rev.b + 1) + ' / ' + rev.of + '권';
-    $('#revLede').innerHTML = '<b>' + esc(rev.owner) + '</b>님의 공책';
+    $('#revLede').innerHTML = '<b>' + esc(rev.owner) + '</b>님의 공책' + (rev.i > last ? ' · 끝' : '');
     $('#revBtns').classList.toggle('hide', !isHost);
+    show('#sReveal');
+    $('#revNote').textContent = isHost ? '' : '방장이 넘깁니다';
+    $('#bPrev').disabled = rev.b === 0 && rev.i < 0;
+    $('#bNext').disabled = false;
+    $('#bNext').textContent = rev.i < 0 ? '공개' : (rev.i > last ? (rev.b + 1 < rev.of ? '다음 공책' : '투표하기') : '다음');
 
-    if (r.phase === 'reveal') {
-      S.peek = false;
-      $('#peekBtns').classList.add('hide');
-      show('#sReveal');
-      $('#revNote').textContent = r.myVote ? (isHost ? '' : '방장이 넘깁니다') : '제일 마음에 드는 걸 고르세요!';
-      $('#bPrev').disabled = rev.b === 0 && rev.i === 0;
-      $('#bNext').disabled = false;
-    } else {
-      /* 끝: 1등을 제 화면에 크게. 공책은 「공책 다시 보기」로 — 아래에 이어 붙이면 스크롤을 하게 된다 */
-      show(S.peek ? '#sReveal' : '#sDone');
-      $('#peekBtns').classList.remove('hide');
-      $('#revNote').textContent = r.myVote ? '' : '제일 마음에 드는 걸 고르세요!';
-      $('#bPrev').disabled = rev.b === 0;
-      $('#bNext').disabled = rev.b >= rev.of - 1;
-      var top = r.top || [];
-      var confetti = '';
-      if (top.length && S.confettiFor !== r.code + ':' + rev.of) {        // 판마다 한 번만 뿌린다
-        S.confettiFor = r.code + ':' + rev.of;
-        for (var ci = 0; ci < 18; ci++) confetti += '<i style="left:' + (4 + ci * 5.2) + '%;background:' + PENS[ci % PENS.length]
-          + ';animation-delay:' + (ci % 6) * .13 + 's;transform:rotate(' + (ci * 37 % 90) + 'deg)"></i>';
-        confetti = '<div class="confetti">' + confetti + '</div>';
-      }
-      $('#top').innerHTML = confetti + (top.length
-        ? '<p class="crown"><svg viewBox="0 0 40 30" width="34" height="26" aria-hidden="true"><path d="M4 26h32l3-16-9 7-10-13-10 13-9-7z" fill="#ffd43b" stroke="#3d2b1f" stroke-width="2.6" stroke-linejoin="round"/><circle cx="20" cy="18" r="2.4" fill="#f06595"/><circle cx="10" cy="20" r="1.8" fill="#74c0fc"/><circle cx="30" cy="20" r="1.8" fill="#51cf66"/></svg>'
-          + (top.length > 1 ? '공동 <b>1등</b>' : '<b>1등</b>') + '</p>'
-          + top.map(function(t, k){
-              var body = t.kind === 'draw'
-                ? '<canvas class="shot" data-w="' + k + '"></canvas>'
-                : '<div class="said">' + esc(t.word) + '</div>';
-              return '<div class="win"><div class="who"><b>' + esc(t.by) + '</b>'
-                + '<span>' + esc(t.book) + '님 공책</span>'
-                + '<i>' + t.votes + '표</i></div>' + body + '</div>';
-            }).join('')
-        : '<p class="crown">아무도 안 뽑았습니다</p>');
-      $('#top').querySelectorAll('canvas.shot').forEach(function(cv){
-        paint(cv, (top[+cv.dataset.w] || {}).strokes);
-      });
-      $('#bAgain').classList.toggle('hide', !isHost);
-      $('#doneNote').textContent = '';
-    }
-
-    /* 스케치북 무대: 지금 쪽 하나. 같은 공책에서 한 쪽 앞으로 갔으면 지금 쪽을 위로 젖혀 올리고 새 쪽을 그 밑에 깐다 */
-    var stage = $('#stage'), cur = r.phase + ':' + rev.b + ':' + rev.i;
+    /* 무대: 표지(-1) → 쪽 → 끝(마지막 쪽 위에 도장). 같은 자리면 다시 안 그린다 */
+    var stage = $('#stage'), cur = r.code + ':' + rev.b + ':' + rev.i;
     if (S.stageFor !== cur) {
       stage.innerHTML = '';
-      var pg = (r.pages || [])[rev.i];
-      if (pg) stage.insertAdjacentHTML('afterbegin', pageHtml(pg, rev.i, 'now' + (r.phase === 'done' && rev.i > 0 ? ' last' : ''), rev.i + 1, rev.pages));
-      stage.querySelectorAll('.pg.now canvas.shot').forEach(function(cv){ paint(cv, (r.pages[+cv.dataset.k] || {}).strokes); });
-      S.stageFor = cur; S.stageBook = rev.b; S.stageIdx = rev.i;
-
-      var past = $('#past');
-      past.innerHTML = (r.pages || []).slice(0, rev.i).map(function(p2, k){ return p2 ? pageHtml(p2, k, 'mini') : ''; }).reverse().join('');
+      if (rev.i < 0) {
+        stage.innerHTML = '<div class="pg now cover"><div class="q">?</div><div class="said"><b>' + esc(rev.owner) + '</b>님의 주제</div>'
+          + '<div class="hint">' + (isHost ? '「공개」를 누르면 열립니다' : '방장이 열어 줍니다') + '</div></div>';
+      } else {
+        var k = Math.min(rev.i, last), pg = (r.pages || [])[k];
+        if (pg) stage.insertAdjacentHTML('afterbegin', pageHtml(pg, k, 'now' + (k === last ? ' last' : ''), k + 1, rev.pages));
+        if (rev.i > last && stage.querySelector('.pg')) stage.querySelector('.pg').insertAdjacentHTML('beforeend', '<div class="stamp">끝!</div>');
+        stage.querySelectorAll('.pg.now canvas.shot').forEach(function(cv){ paint(cv, (r.pages[+cv.dataset.k] || {}).strokes); });
+      }
+      S.stageFor = cur;
+      var past = $('#past'), upto = rev.i < 0 ? 0 : Math.min(rev.i, last);
+      past.innerHTML = (r.pages || []).slice(0, upto).map(function(p2, k2){ return p2 ? pageHtml(p2, k2, 'mini') : ''; }).reverse().join('');
       past.querySelectorAll('canvas.shot').forEach(function(cv){ paint(cv, (r.pages[+cv.dataset.k] || {}).strokes); });
     }
-    document.querySelectorAll('#sReveal button.star').forEach(function(b){
-      var k = +b.dataset.k, pg2 = (r.pages || [])[k] || {};
-      var on = r.myVote === rev.b + ':' + k;
-      b.classList.toggle('on', on);
-      b.textContent = (on ? '★' : '☆') + (pg2.votes ? ' ' + pg2.votes : '');
-    });
-    $('#sReveal').onclick = function(e){
-      var b = e.target.closest('button.star'); if (!b) return;
-      send({ t:'vote', b:rev.b, i:+b.dataset.k });      // 한 사람이 한 표. 다시 누르면 거둔다
-    };
     return;
   }
+
+  if (r.phase === 'vote') {
+    $('#step').textContent = '투표';
+    show('#sAlbum');
+    album(r, 'vote');
+    return;
+  }
+
+  if (r.phase === 'done') {
+    $('#step').textContent = '끝';
+    if (S.peek) { show('#sAlbum'); album(r, 'peek'); return; }
+    show('#sDone');
+    var top = r.top || [];
+    if (top.length && S.cheerFor !== r.album.key) { S.cheerFor = r.album.key; setTimeout(cheer, 150); }   // 판마다 한 번만
+    $('#top').innerHTML = (top.length
+      ? '<p class="crown"><svg viewBox="0 0 40 30" width="34" height="26" aria-hidden="true"><path d="M4 26h32l3-16-9 7-10-13-10 13-9-7z" fill="#ffd43b" stroke="#3d2b1f" stroke-width="2.6" stroke-linejoin="round"/><circle cx="20" cy="18" r="2.4" fill="#f06595"/><circle cx="10" cy="20" r="1.8" fill="#74c0fc"/><circle cx="30" cy="20" r="1.8" fill="#51cf66"/></svg>'
+        + (top.length > 1 ? '공동 <b>1등</b>' : '<b>1등</b>') + '</p>'
+        + top.map(function(t, k){
+            var body = t.kind === 'draw'
+              ? '<canvas class="shot" data-w="' + k + '"></canvas>'
+              : '<div class="said">' + esc(t.word) + '</div>';
+            return '<div class="win"><div class="who"><b>' + esc(t.by) + '</b>'
+              + '<span>' + esc(t.book) + '님 공책</span>'
+              + '<i>' + t.votes + '표</i></div>' + body + '</div>';
+          }).join('')
+      : '<p class="crown">아무도 안 뽑았습니다</p>');
+    $('#top').querySelectorAll('canvas.shot').forEach(function(cv){ paint(cv, (top[+cv.dataset.w] || {}).strokes); });
+    $('#bAgain').classList.toggle('hide', !isHost);
+    $('#doneNote').textContent = '';
+    return;
+  }
+}
+
+/**
+ * 공책첩. 공책 전체는 서버에 한 번만 청해서 들고 있는다(album 메시지 → book 통들).
+ * mode 'vote': 쪽을 눌러 고르고 「이걸로 정하기」. 'peek': 구경만
+ */
+function album(r, mode){
+  var key = r.album.key;
+  if (!S.album || S.album.key !== key) {
+    if (S.albumAsk !== key) { S.albumAsk = key; S.albSel = null; S.albB = 0; send({ t:'album' }); }
+    $('#albLede').textContent = '공책을 펴는 중…';
+    $('#albTabs').innerHTML = ''; $('#albGrid').innerHTML = ''; $('#albSel').textContent = '';
+    $('#albPick').classList.add('hide'); $('#albBack').classList.add('hide'); $('#albNote').textContent = '';
+    return;
+  }
+  var books = S.album.books, b = Math.max(0, Math.min(books.length - 1, S.albB || 0));
+  var voted = !!r.myVote;
+  $('#albLede').innerHTML = mode === 'vote'
+    ? (voted ? '냈습니다. 다른 사람을 기다립니다' : '제일 마음에 드는 걸 고르세요!')
+    : '<b>' + esc(books[b].owner) + '</b>님의 공책';
+  $('#albPick').classList.toggle('hide', mode !== 'vote' || voted);
+  $('#albBack').classList.toggle('hide', mode !== 'peek');
+  $('#albNote').textContent = mode === 'vote' ? r.voted + ' / ' + r.voters + '명 냈습니다' : '';
+  $('#bVote').disabled = !S.albSel;
+  var selB = S.albSel ? +S.albSel.split(':')[0] : -1, selI = S.albSel ? +S.albSel.split(':')[1] : -1;
+  var sel = mode === 'vote' && S.albSel ? ((books[selB] || {}).pages || [])[selI] : null;
+  $('#albSel').innerHTML = sel
+    ? '고른 것: <b>' + esc(books[selB].owner) + '</b>님 공책 ' + (selI + 1) + '쪽 · ' + esc(sel.by) + '의 ' + (sel.kind === 'draw' ? '그림' : (selI ? '답' : '제시어'))
+    : (mode === 'vote' && !voted ? '쪽을 눌러 고르세요' : '');
+
+  var cur = key + ':' + b + ':' + mode + ':' + (S.albSel || '') + ':' + voted;
+  if (S.albFor === cur) return;
+  S.albFor = cur;
+  $('#albTabs').innerHTML = books.map(function(bk, k){
+    return '<button data-b="' + k + '" class="' + (k === b ? 'on' : '') + '">' + esc(bk.owner) + (mode === 'vote' && selB === k ? ' ★' : '') + '</button>';
+  }).join('');
+  var grid = $('#albGrid');
+  grid.classList.toggle('pick', mode === 'vote' && !voted);
+  grid.innerHTML = books[b].pages.map(function(pg, k){
+    if (!pg) return '';
+    var on = (mode === 'vote' && S.albSel === b + ':' + k) ? ' on' : '';
+    return pageHtml(pg, k, 'thumb' + on, k + 1, books[b].pages.length).replace('<div class="pg ', '<div data-v="' + b + ':' + k + '" class="pg ');
+  }).join('');
+  grid.querySelectorAll('canvas.shot').forEach(function(cv){ paint(cv, (books[b].pages[+cv.dataset.k] || {}).strokes); });
 }
 
 /** 공책 한 쪽 — 위에 누가 뭘 했는지, 아래에 말이나 그림 */
@@ -1061,7 +1172,7 @@ function pageHtml(pg, k, cls, no, of){
   var cap = k === 0 ? '고른 말' : (pg.kind === 'draw' ? '그림' : '추측');
   return '<div class="pg ' + cls + (k === 0 ? ' first' : '') + (pg.word === '…' ? ' miss' : '') + '">' +
     (no ? '<i class="tab num">' + no + ' / ' + of + '</i>' : '') +
-    '<div class="by"><span>' + cap + ' · ' + esc(pg.by) + '</span><button class="star" data-k="' + k + '"></button></div>' +
+    '<div class="by"><span>' + cap + ' · ' + esc(pg.by) + '</span></div>' +
     (pg.kind === 'draw' ? '<canvas class="shot" data-k="' + k + '"></canvas>' : '<div class="said">' + esc(pg.word) + '</div>') +
     '</div>';
 }

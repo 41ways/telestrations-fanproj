@@ -6,7 +6,7 @@
  *   node bots.js ABCD 2 https://telestrations.41ways.workers.dev
  *   node bots.js ABCD 3 --pass      그림은 안 그리고 빈 쪽으로만 넘긴다 (흐름만 빨리 볼 때)
  *
- * 봇은 제시어를 고르고, 그리고, 맞히고, 공개 때 아무 쪽에나 별을 준다. 한 판 더 해도 계속 따라온다.
+ * 봇은 제시어를 고르고, 그리고, 맞히고, 투표 때 아무 쪽에나 한 표 준다. 한 판 더 해도 계속 따라온다.
  * 사람이 먼저 방을 만들었으면 사람이 방장이다 — 시작과 공개 넘기기는 사람 몫.
  * 봇이 먼저 붙어 방장이 되어 버렸으면 봇이 알아서 시작하고 넘긴다.
  */
@@ -58,7 +58,7 @@ for (let i = 0; i < many; i++) seat(i);
 function seat(i) {
   const name = NAMES[i % NAMES.length];
   const pid = 'bot-' + i + '-' + BOOT;
-  let sock, acted = new Set(), lastBook = -1, starting = false, yielded = 0, tries = 0;
+  let sock, acted = new Set(), starting = false, yielded = 0, tries = 0;
   /* 예약해 둔 전송이 재접속 직후 아직 안 열린 소켓에 나가면 프로세스가 통째로 죽는다 — 열려 있을 때만 보낸다 */
   const say = o => { if (sock && sock.readyState === 1) sock.send(JSON.stringify(o)); };
 
@@ -96,7 +96,7 @@ function seat(i) {
     }
 
     if (v.phase === 'lobby') {
-      acted = new Set(); lastBook = -1;                  // 한 판 더 — 기억을 비운다
+      acted = new Set();                  // 한 판 더 — 기억을 비운다
       if (boss && v.players.length >= 4 && !starting) {
         starting = true;
         console.log(name, '(방장) 3초 뒤 시작합니다 — 더 들어올 사람 있으면 지금');
@@ -111,13 +111,13 @@ function seat(i) {
       if (!acted.has(at)) { acted.add(at); setTimeout(() => say({ t: 'turn', d: 1 }), 2600); }
     }
 
-    // 공개 때는 가끔 별을 준다. 공책이 넘어갈 때마다 한 번씩
-    if (v.phase === 'reveal' && v.reveal && v.reveal.b !== lastBook) {
-      lastBook = v.reveal.b;
-      if (Math.random() < .7) {
-        const k = Math.floor(Math.random() * Math.max(1, (v.pages || []).length));
-        setTimeout(() => say({ t: 'star', b: v.reveal.b, i: k }), 500 + Math.random() * 900);
-      }
+    // 투표 — 아무 쪽에나 한 표
+    if (v.phase === 'vote') {
+      const vk = 'vote:' + v.album.key;
+      if (v.myVote || acted.has(vk)) return;
+      acted.add(vk);
+      const b = Math.floor(Math.random() * v.album.of), k = Math.floor(Math.random() * v.album.pages);
+      setTimeout(() => { say({ t: 'vote', b, i: k }); console.log(name, '표 냈습니다 →', (b + 1) + '권 ' + (k + 1) + '쪽'); }, 1500 + Math.random() * 4000);
       return;
     }
 
