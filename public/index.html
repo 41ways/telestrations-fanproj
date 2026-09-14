@@ -799,6 +799,7 @@ function connect(){
   var ws = new WebSocket(u);
   S.sock = ws;
   ws.onmessage = function(ev){
+    var first = !ws.got;
     ws.got = true; S.misses = 0;
     var m; try { m = JSON.parse(ev.data); } catch (e) { return; }
     if (m.t === 'err') { toast(m.m); return; }
@@ -811,7 +812,8 @@ function connect(){
     if (m.t !== 'room') return;
     var was = S.room;
     S.room = m;
-    if (!was || was.phase !== m.phase || was.round !== m.round) S.sent = false;
+    /* 새 라운드거나, 다시 붙었는데 서버가 아직 못 받았다고 하면 다시 낼 수 있게 — 끊긴 사이에 보낸 건 사라진다 */
+    if (!was || was.phase !== m.phase || was.round !== m.round || (first && !m.done)) S.sent = false;
     draw();
   };
   ws.onclose = function(){
@@ -825,7 +827,7 @@ function connect(){
   };
   ws.onerror = function(){ try { ws.close(); } catch (e) {} };
 }
-function send(o){ try { S.sock && S.sock.readyState === 1 && S.sock.send(JSON.stringify(o)); } catch (e) {} }
+function send(o){ try { if (S.sock && S.sock.readyState === 1) { S.sock.send(JSON.stringify(o)); return true; } } catch (e) {} return false; }
 
 // ══════════════════════════════ 문간
 function saveName(){
@@ -945,16 +947,15 @@ $('#pw').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('#bPi
 
 $('#bDrawDone').onclick = function(){
   if (S.sent) return;
-  S.sent = true;
-  /* 첫 라운드(짝수 인원)의 그림은 내 공책 몫이라 보내는 자리가 다르다 */
-  send(S.room && S.room.phase === 'pick' ? { t:'head', s:pad.strokes } : { t:'draw', s:pad.strokes });
+  /* 첫 라운드(짝수 인원)의 그림은 내 공책 몫이라 보내는 자리가 다르다. 연결이 끊겨 못 보냈으면 다시 누를 수 있게 둔다 */
+  S.sent = send(S.room && S.room.phase === 'pick' ? { t:'head', s:pad.strokes } : { t:'draw', s:pad.strokes });
 };
 $('#bGuessDone').onclick = function(){
   if (S.sent) return;
   var w = ($('#gw').value || '').trim();
   if (!w) { toast('한 마디만 적어 주세요'); return; }
-  S.sent = true;
-  send({ t:'guess', w:w });
+  S.sent = send({ t:'guess', w:w });
+  if (!S.sent) toast('연결을 다시 잇는 중입니다');
 };
 $('#gw').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('#bGuessDone').click(); });
 
@@ -1004,7 +1005,8 @@ function clock(r){
 /** 시계가 다 되기 직전 — 안 냈으면 그리던 그림·적던 답을 그대로 낸다. 빈 쪽으로 남는 것보단 낫다 */
 function autoHand(){
   var r = S.room;
-  if (!r || S.sent || r.done) return;
+  if (!r || S.sent) return;
+  if (r.done && (r.phase === 'pick' || r.phase === 'play')) return;   // 투표 때 done 은 지난 라운드 것이라 보지 않는다
   if (!$('#sDraw').classList.contains('hide') && pad.strokes.length) $('#bDrawDone').click();
   else if (!$('#sGuess').classList.contains('hide') && ($('#gw').value || '').trim()) $('#bGuessDone').click();
   else if (r.phase === 'vote' && !r.myVote && S.albSel) $('#bVote').click();   // 골라만 두고 안 냈으면 그걸로
@@ -1126,7 +1128,7 @@ function draw(){
     $('#bNext').textContent = rev.i < 0 ? '공개' : (rev.i > last ? (rev.b + 1 < rev.of ? '다음 공책' : '투표하기') : '다음');
 
     /* 무대: 표지(-1) → 쪽 → 끝(마지막 쪽 위에 도장). 같은 자리면 다시 안 그린다 */
-    var stage = $('#stage'), cur = r.code + ':' + rev.b + ':' + rev.i;
+    var stage = $('#stage'), cur = r.code + ':' + rev.b + ':' + rev.i + ':' + isHost;   // 방장이 바뀌면 표지 안내도 바뀐다
     if (S.stageFor !== cur) {
       stage.innerHTML = '';
       if (rev.i < 0) {

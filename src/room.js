@@ -180,11 +180,14 @@ export class Room extends DurableObject {
 
   /* 연결이 끊겨도 바로 방장을 넘기지 않는다 — 새로고침이나 서버 재시작이면 몇 초 안에 돌아온다.
      그때마다 방장이 봇이나 남에게 넘어갔다 오면 시작·넘기기 단추가 들썩인다 */
-  async webSocketClose(ws) { await this.tidy(ws); }
+  async webSocketClose(ws, code) {
+    try { ws.close(code === 1005 || code === 1006 ? 1000 : code, 'bye'); } catch {}   // 닫기에 답해야 저쪽이 CLOSING 에 매달리지 않는다
+    await this.tidy(ws);
+  }
   async webSocketError(ws) { await this.tidy(ws); }
   async tidy(ws) {
     const r = this.r;
-    if (r && r.phase === 'lobby') await this.handoff(ws);          // 시작 전엔 자리를 바로 비운다
+    if (r && r.phase === 'lobby') { await this.handoff(ws); await this.save(); }   // 시작 전엔 자리를 바로 비운다 — 저장까지 해야 잠들었다 깨도 유령이 안 남는다
     else setTimeout(() => { this.handoff(null).then(() => this.settle()).then(() => this.pushAll()).catch(() => {}); }, 4000);
     await this.pushAll();
   }
@@ -224,10 +227,12 @@ export class Room extends DurableObject {
 
   /* ── 판 ── */
   async start() {
-    const r = this.r, n = r.players.length;
-    if (n < MIN_PLAYERS) throw new Error(MIN_PLAYERS + '명은 모여야 시작합니다');
+    const r = this.r;
+    await this.handoff(null);                        // 안 붙어 있는 자리는 빼고 센다
+    if (r.players.length < MIN_PLAYERS) throw new Error(MIN_PLAYERS + '명은 모여야 시작합니다');
     const old = [...(await this.ctx.storage.list({ prefix: 'p:' })).keys()];
     if (old.length) await this.ctx.storage.delete(old);
+    const n = r.players.length;
     const mix = (LEVELS[r.level] || LEVELS[DEFAULT_LEVEL]).mix;
     r.cards = {};
     if (mix) for (const p of r.players) r.cards[p.pid] = card(Math.random, mix);   // 「직접」이면 카드 없이 각자 적는다
