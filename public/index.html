@@ -811,6 +811,11 @@ function connect(){
     }
     if (m.t !== 'room') return;
     var was = S.room;
+    /* 판 수 세기 — 방장 화면에서만. 사람마다 보내면 한 판이 인원수만큼 세어진다. */
+    if (was && was.phase === 'lobby' && m.phase === 'pick' && m.me === m.host && window.norara) {
+      S.statAt = Date.now();
+      norara.ev('start', { n: m.players.length });
+    }
     S.room = m;
     /* 새 라운드거나, 다시 붙었는데 서버가 아직 못 받았다고 하면 다시 낼 수 있게 — 끊긴 사이에 보낸 건 사라진다 */
     if (!was || was.phase !== m.phase || was.round !== m.round || (first && !m.done)) S.sent = false;
@@ -1161,6 +1166,10 @@ function draw(){
     show('#sDone');
     var top = r.top || [];
     if (top.length && S.cheerFor !== r.album.key) { S.cheerFor = r.album.key; setTimeout(cheer, 150); }   // 판마다 한 번만
+    if (S.statAt && r.me === r.host && window.norara) {      // 끝도 판마다 한 번
+      norara.ev('end', { n: r.players.length, sec: Math.round((Date.now() - S.statAt) / 1000) });
+      S.statAt = 0;
+    }
     $('#top').classList.toggle('many', top.length > 4);
     $('#top').innerHTML = (top.length
       ? '<p class="crown"><svg viewBox="0 0 40 30" width="34" height="26" aria-hidden="true"><path d="M4 26h32l3-16-9 7-10-13-10 13-9-7z" fill="#ffd43b" stroke="#3d2b1f" stroke-width="2.6" stroke-linejoin="round"/><circle cx="20" cy="18" r="2.4" fill="#f06595"/><circle cx="10" cy="20" r="1.8" fill="#74c0fc"/><circle cx="30" cy="20" r="1.8" fill="#51cf66"/></svg>'
@@ -1276,6 +1285,32 @@ function waitAt(){
   sc.src = "https://gc.zgo.at/count.js";
   sc.setAttribute("data-goatcounter", "https://41ways.goatcounter.com/count");
   document.head.appendChild(sc);
+
+  // 판 수·인원·걸린 시간 — 게임 코드에서 norara.ev("start", { n: 인원 }) 처럼 부른다.
+  // 날짜·게임·이름으로 묶어 더하기만 하므로 한 판에 한 줄씩 쌓이지 않는다.
+  window.norara = {
+    ev: function (name, o) {
+      o = o || {};
+      o.app = APP;
+      o.ev = name;
+      try {
+        navigator.sendBeacon("https://norara-errors.41ways.workers.dev/ev", JSON.stringify(o));
+      } catch (e) {}
+    }
+  };
+
+  // 얼마나 머물렀는지 — 탭을 덮거나 닫을 때 한 번만. pagehide 만으로는 폰에서 자주 놓친다.
+  var came = Date.now(), told = false;
+  function leaving() {
+    if (told) return;
+    told = true;
+    var sec = Math.round((Date.now() - came) / 1000);
+    if (sec >= 5) window.norara.ev("visit", { sec: sec });   // 스쳐 간 것은 빼고
+  }
+  addEventListener("pagehide", leaving);
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "hidden") leaving();
+  });
 
   // 화면에서 터진 오류를 모은다. 한 번 열 때 다섯 건까지만 — 같은 오류가 쏟아져도 한도를 안 태우게.
   var left = 5;
