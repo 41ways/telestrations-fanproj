@@ -12,7 +12,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import { card } from './words.js';
 import {
-  MIN_PLAYERS, MAX_PLAYERS, MAX_NAME, MAX_GUESS, MAX_CONN, MAX_STROKES,
+  MIN_PLAYERS, MAX_PLAYERS, MAX_NAME, MAX_GUESS, MAX_CONN, MAX_STROKES, MAX_INK,
   SECS, DEFAULT_SECS, secsOf, SEC_VOTE, IDLE_MS,
   LEVELS, DEFAULT_LEVEL, GAMES, DEFAULT_GAME, gameOf,
   clean, headOf, pagesOf, kindOfPage, pageOfRound, bookOf, seatOfPage, trim,
@@ -206,6 +206,7 @@ export class Room extends DurableObject {
     const r = this.r;
     r.touched = Date.now();
     const isHost = pid === r.host;
+    const isQuiz = (r.game || DEFAULT_GAME) === 'quiz';
 
     try {
       if (m.t === 'start' && isHost && r.phase === 'lobby') await this.start();
@@ -220,7 +221,9 @@ export class Room extends DurableObject {
       else if (m.t === 'again' && isHost && r.phase === 'done') await this.again();
       else if (m.t === 'pass' && isHost) await this.pass(pid, m.to);
       else if (m.t === 'leave') { await this.leave(ws, pid); return; }
-      /* 스케치퀴즈 — 획과 말은 오가는 양이 많아서, 판을 저장하고 모두에게 다시 그리는 길로 보내지 않는다 */
+      /* 스케치퀴즈 — 획과 말은 오가는 양이 많아서, 판을 저장하고 모두에게 다시 그리는 길로 보내지 않는다.
+         텔레스트레이션 방에서는 아예 받지 않는다 — 다른 게임의 말이 섞여 들면 엉뚱한 일이 생긴다 */
+      else if (!isQuiz) return;
       else if (m.t === 'qpick' && r.phase === 'qpick') await this.qPick(pid, m.i);
       else if (m.t === 'ink') { await this.qInk(pid, m.s); return; }
       else if (m.t === 'live') { this.qLive(pid, m); return; }
@@ -304,7 +307,10 @@ export class Room extends DurableObject {
         r.q.solved = r.q.solved.filter(x => x !== pid);
         if (r.phase !== 'lobby' && r.phase !== 'done') {
           if (r.players.length < gameOf('quiz').min) await this.qOver();     // 남은 사람이 너무 적다
-          else if (pid === r.q.drawer) await this.qEndTurn('그린 사람이 나갔습니다');
+          else if (pid === r.q.drawer) {
+            if (r.phase === 'qpick') await this.qNext();                      // 아직 아무것도 안 그렸다
+            else await this.qEndTurn('그린 사람이 나갔습니다');
+          }
           else if (this.qAllSolved()) await this.qEndTurn('모두 맞혔습니다');
         }
       }
@@ -517,6 +523,12 @@ export class Room extends DurableObject {
     await this.qTurn(0);
   }
 
+  /** 그 차례에 그릴 사람이 아직 붙어 있나 */
+  qHere(pid) {
+    return this.r.players.some(p => p.pid === pid)
+      && this.ctx.getWebSockets().some(w => this.who(w).pid === pid);
+  }
+
   /** 차례 하나 — 그리는 사람이 제시어 셋 중 하나를 고르는 데서 시작한다 */
   async qTurn(t) {
     const r = this.r, q = r.q;
@@ -556,6 +568,11 @@ export class Room extends DurableObject {
     if (!one) return;
     const ink = await this.inks();
     if (ink.length >= MAX_STROKES) return;
+    /* 한 칸에 넣을 수 있는 크기(128KiB)가 정해져 있다 — 점 수로 막아 두지 않으면
+       오래 그린 판에서 저장이 통째로 터진다 */
+    let dots = 0;
+    for (const st2 of ink) dots += st2.p.length;
+    if (dots + one.p.length > MAX_INK * 2) return;
     ink.push(one);
     await this.setInk(ink);
     this.blast({ t: 'ink', s: one }, x => x !== pid);
@@ -631,7 +648,7 @@ export class Room extends DurableObject {
     const r = this.r, q = r.q;
     const turns = q.order.length * (r.laps || DEFAULT_LAPS);
     let t = q.turn + 1;
-    while (t < turns && !r.players.some(p => p.pid === q.order[t % q.order.length])) t++;   // 나간 사람 차례는 건너뛴다
+    while (t < turns && !this.qHere(q.order[t % q.order.length])) t++;   // 나갔거나 끊긴 사람 차례는 건너뛴다
     if (t >= turns || r.players.length < gameOf('quiz').min) return this.qOver();
     await this.qTurn(t);
   }
@@ -680,7 +697,8 @@ export class Room extends DurableObject {
     }
     /* 스케치퀴즈 — 제시어를 안 골랐으면 첫 장으로, 그리는 시간이 끝나면 정답을 보여 주고 다음 사람 */
     if (r.phase === 'qpick' && r.deadline && Date.now() >= r.deadline - 500) {
-      await this.qPick(r.q.drawer, 0);
+      if (this.qHere(r.q.drawer)) await this.qPick(r.q.drawer, 0);        // 안 골랐으면 첫 장으로
+      else await this.qNext();                                           // 그릴 사람이 없다 — 다음 차례로
       await this.save(); await this.pushAll(); return;
     }
     if (r.phase === 'qplay' && r.deadline) {

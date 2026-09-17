@@ -24,6 +24,7 @@ function seat(code, name, make) {
   sock.onmessage = e => {
     const m = JSON.parse(e.data);
     if (m.t === 'room') me.v = m;
+    else if (m.t === 'err') { me.err = m.m; console.log('    (' + name + ' 에게 온 말: ' + m.m + ')'); }
     else if (m.t === 'chat') me.chat.push(m);
     else if (m.t === 'ink' || m.t === 'ink0') me.ink += m.s ? (m.s.length || 1) : 0;
   };
@@ -66,6 +67,10 @@ const run = async () => {
   await sleep(300);
   ok(guess.chat.some(c => c.text === '엉뚱한 답'), '틀린 답은 그냥 한마디로 뜬다');
 
+  drawer.say({ t: 'say', w: word });
+  await sleep(300);
+  ok(!guess.chat.some(c => c.text === word), '그리는 사람이 정답을 쳐도 안 퍼진다');
+
   guess.say({ t: 'say', w: word });
   ok(await till(() => guess.v.q.iSolved), '맞히면 맞힌 사람으로 잡힌다');
   const mine = guess.v.q.scores.find(x => x.pid === guess.pid);
@@ -74,6 +79,10 @@ const run = async () => {
   ok(await till(() => guess.v.phase === 'qend'), '다 맞히면 차례가 끝난다');
   ok(guess.v.q.word === word, '차례가 끝나면 정답이 보인다');
   ok(await till(() => guess.v.phase === 'qpick' && guess.v.q.turn === 2, 9000), '다음 차례로 넘어간다');
+
+  guess.say({ t: 'say', w: '이제 알겠지' });
+  await sleep(300);
+  ok(drawer.chat.some(c => c.text === '이제 알겠지'), '맞힌 사람 말은 그리는 사람에게 간다');
 
   console.log('나가기');
   guess.say({ t: 'leave' });
@@ -92,6 +101,11 @@ const run = async () => {
   await sleep(400);
   p.forEach(x => x.say({ t: 'head', s: [{ c: 1, w: 1, p: [10, 10, 900, 900] }] }));
   ok(await till(() => p[0].v.phase === 'play' && p[0].v.round === 2), '넷이 다 내면 다음 라운드');
+  /* 다른 게임의 말이 섞여 들면 안 된다 */
+  p[1].say({ t: 'say', w: '여기서 떠들기' });
+  p[1].say({ t: 'ink', s: { c: 1, w: 1, p: [1, 1, 900, 900] } });
+  await sleep(400);
+  ok(!p[0].chat.length && !p[0].ink, '텔레스트레이션 방에서는 스케치퀴즈 말이 안 먹는다');
   p.forEach(x => x.sock.close());
 
   console.log(bad ? bad + '군데 어긋납니다' : '모두 통과');
