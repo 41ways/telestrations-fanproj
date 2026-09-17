@@ -8,23 +8,113 @@
 <meta property="og:title" content="텔레스트레이션">
 <meta property="og:description" content="그림과 추측이 한 칸씩 돌아가는 방. 4~10명, 방 번호만 있으면 바로.">
 <meta property="og:type" content="website">
+<meta name="theme-color" content="#fff6e0">
+<script>
+  // 첫 페인트 전에 테마를 정해서 화면이 번쩍이지 않게 한다
+  try {
+    var t = localStorage.getItem('theme');
+    if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    document.documentElement.dataset.theme = t;
+  } catch (e) {}
+</script>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🖍️</text></svg>">
 <style>
 /* 글꼴은 우리가 직접 내준다. 구글에서 불러오면 막힌 곳에서는 기본 글꼴로 떨어져
    크레용 차림이 통째로 무너진다. 이름과 추측은 아무 글자나 들어오므로 통짜로 싣는다 */
 @font-face{font-family:"Jua";font-style:normal;font-weight:400;font-display:swap;
   src:url("/jua.woff2") format("woff2")}
+/* ── 색 ── 밝은 쪽이 기본이고, 어두운 쪽은 아래에서 토큰만 갈아 끼운다.
+   크레용 여덟 색과 「종이」 한 벌은 두 테마에서 같다 — 어느 쪽에서 그린 그림이든
+   나중에 공책첩에서 같은 얼굴로 다시 보여야 하기 때문이다 */
 :root{
-  --paper:#fff6e0;          /* 바탕 — 도화지 */
-  --ink:#3d2b1f;            /* 크레용 갈색 검정 */
-  --dim:#8a7461;
-  --card:#fffdf8;           /* 그림판 바탕. 어두운 화면에서도 그대로다 */
+  /* 두 테마에서 같은 것 — 종이와 그 위에 얹히는 글자 */
+  --sheet:#fffdf8;          /* 그림이 앉는 도화지. 어두운 화면에서도 그대로다 */
+  --sheet-ink:#3d2b1f;      /* 종이와 크레용 칠 위의 글자·테두리 */
+  --sheet-dim:#75604c;      /* 종이 위 흐린 글자 */
+  --sheet-accent:#bf4508;   /* 종이 위 주황 글자 */
+  --sheet-dots:#ede3cf;     /* 종이 점무늬 */
+  --tint-dim:#4f3d2c;       /* 노랑·파랑·초록 칠 위의 작은 글자 */
+
+  /* 크레용 여덟 자루 — 이 게임의 얼굴이라 테마를 안 탄다 */
   --orange:#e8590c;
   --yellow:#ffd43b;
   --blue:#74c0fc;
   --green:#51cf66;
   --red:#e03131;
   --pink:#f06595;
+
+  /* 여기부터 테마를 탄다 */
+  --paper:#fff6e0;          /* 바탕 — 책상 */
+  --panel:#fff;             /* 판 바탕 */
+  --dots:#ede3cf;           /* 판 점무늬 */
+  --surface:#fff;           /* 단추·표찰 */
+  --field:#fffdf8;          /* 적는 칸 */
+  --tray:#fbf3df;           /* 크레용 통 */
+  --tray-lo:#eadfc6;        /* 통 아래 그늘 */
+  --ink:#3d2b1f;            /* 크레용 갈색 검정 */
+  --dim:#75604c;            /* 흐린 글자 */
+  --rule:#cdbc9c;           /* 적는 칸 테두리 */
+  --ph:#877253;             /* 빈 칸 안내 글자 */
+  --shadow:#3d2b1f;         /* 툭 떨어지는 크레용 그림자 */
+  --sunk:rgba(61,43,31,.06);      /* 칸 안쪽 그늘 */
+  --ring:rgba(232,89,12,.18);     /* 칸을 짚었을 때 둘레 */
+  --drop:rgba(61,43,31,.35);      /* 집어 든 크레용 밑그림자 */
+  --accent:#bf4508;         /* 글자로 쓰는 주황 */
+  --ok:#1e7a34;             /* 맞혔다 */
+  --say:#1971c2;            /* 맞힌 사람끼리 하는 말 */
+  --glow-a:rgba(232,89,12,.09);   /* 바탕에 번진 빛 둘 */
+  --glow-b:rgba(116,192,252,.13);
+  color-scheme:light;
+}
+/* 기기가 어두운 쪽이면 — 단, 사람이 밝은 쪽을 골라 뒀으면 그 말을 따른다 */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#1b1714;
+    --panel:#262019;
+    --dots:#3b3128;
+    --surface:#332a21;
+    --field:#221c16;
+    --tray:#2c241b;
+    --tray-lo:#221b14;
+    --ink:#f2e7d6;
+    --dim:#b3a18c;
+    --rule:#5c4c3b;
+    --ph:#9d8b73;
+    --shadow:#000;
+    --sunk:rgba(0,0,0,.28);
+    --ring:rgba(255,154,92,.26);
+    --drop:rgba(0,0,0,.55);
+    --accent:#ff9a5c;
+    --ok:#5fcf7a;
+    --say:#7cb8f5;
+    --glow-a:rgba(232,89,12,.14);
+    --glow-b:rgba(116,192,252,.10);
+    color-scheme:dark;
+  }
+}
+/* 사람이 어두운 쪽을 골랐을 때 — 위와 같은 토큰 */
+:root[data-theme="dark"]{
+  --paper:#1b1714;
+  --panel:#262019;
+  --dots:#3b3128;
+  --surface:#332a21;
+  --field:#221c16;
+  --tray:#2c241b;
+  --tray-lo:#221b14;
+  --ink:#f2e7d6;
+  --dim:#b3a18c;
+  --rule:#5c4c3b;
+  --ph:#9d8b73;
+  --shadow:#000;
+  --sunk:rgba(0,0,0,.28);
+  --ring:rgba(255,154,92,.26);
+  --drop:rgba(0,0,0,.55);
+  --accent:#ff9a5c;
+  --ok:#5fcf7a;
+  --say:#7cb8f5;
+  --glow-a:rgba(232,89,12,.14);
+  --glow-b:rgba(116,192,252,.10);
+  color-scheme:dark;
 }
 *{box-sizing:border-box}
 /* 어디서나 연필을 든 채로 */
@@ -37,8 +127,8 @@ body{
   font-size:17px; line-height:1.5;
   padding:16px 14px 36px;
   background-image:
-    radial-gradient(420px 220px at 8% -4%, rgba(232,89,12,.09), transparent 65%),
-    radial-gradient(380px 200px at 96% 2%, rgba(116,192,252,.13), transparent 65%);
+    radial-gradient(420px 220px at 8% -4%, var(--glow-a), transparent 65%),
+    radial-gradient(380px 200px at 96% 2%, var(--glow-b), transparent 65%);
 }
 .wrap{max-width:560px;margin:0 auto}
 /* 짧은 화면(문간·대기실·고르기·기다림)은 위에 몰지 않고 세로 가운데에 앉힌다 */
@@ -52,11 +142,11 @@ body.mid .card,body.wide .card{flex:none}
 /* ── 타이틀 ── */
 header{margin-bottom:14px}
 .back{font-size:15px;color:var(--dim);text-decoration:none}
-.back:hover{color:var(--orange)}
+.back:hover{color:var(--accent)}
 .logo{margin:2px 0 0;display:flex;align-items:flex-end;gap:1px;flex-wrap:wrap;line-height:1}
 .logo b{
   font-size:clamp(30px,8.5vw,42px);font-weight:700;display:inline-block;
-  text-shadow:2px 2px 0 var(--ink);
+  text-shadow:2px 2px 0 var(--shadow);
 }
 .logo b:nth-child(1){color:var(--red);transform:rotate(-4deg)}
 .logo b:nth-child(2){color:var(--orange);transform:rotate(3deg)}
@@ -82,7 +172,7 @@ header{margin-bottom:14px}
 .title .ink .l7 .fc{animation-delay:1.25s,1.7s}
 @keyframes trace{to{stroke-dashoffset:0}}
 @keyframes fillin{to{fill-opacity:1;stroke-width:0}}
-.title .ink .sh{fill:var(--ink);opacity:0;animation:shade .3s ease-out 1.95s forwards}
+.title .ink .sh{fill:var(--shadow);opacity:0;animation:shade .3s ease-out 1.95s forwards}
 @keyframes shade{to{opacity:1}}
 /* 글자마다 다르게 떠다닌다 — 높이·박자·기울기가 제각각이라야 살아 있어 보인다 */
 .title .ink g[class^="l"]{transform-box:fill-box;transform-origin:50% 60%}
@@ -113,6 +203,10 @@ header{margin-bottom:14px}
 @keyframes appear{to{opacity:1}}
 @keyframes slide-l{from{opacity:0;transform:translateX(-46px) rotate(-14deg)}to{opacity:1;transform:none}}
 @keyframes slide-r{from{opacity:0;transform:translateX(46px) rotate(14deg)}to{opacity:1;transform:none}}
+/* 스케치북과 그 위의 기린은 흰 종이 위에 있으니 검정 그대로. 책 밖에 굴러 나온 크레용과 연필은
+   책상 위라 어두운 테마에서 테두리와 띠를 바닥 색으로 갈아 낀다 */
+.title .art :is(.a-c1,.a-c2,.a-c3,.a-pen) [stroke="#3d2b1f"]{stroke:var(--ink)}
+.title .art :is(.a-c1,.a-c2,.a-c3,.a-pen) [fill="#fff6e0"]{fill:var(--paper)}
 @media (prefers-reduced-motion:reduce){
   .title .ink .fc,.title .ink .sh,.title .squig path{animation:none;stroke-dashoffset:0;fill-opacity:1;opacity:1;stroke-width:0}
   .title .ink g[class^="l"]{animation:none}
@@ -145,7 +239,7 @@ header{margin-bottom:14px}
 .title .disclaimer{animation:appear .5s ease-out 2.9s forwards}   /* 게임 시작·규칙이 뜬 다음에 조용히 */
 .trow .btn{border:0;background:none;box-shadow:none;padding:2px 0;font-size:16px;color:var(--dim);
   border-bottom:3px solid transparent;border-radius:0}
-.trow .btn:hover{color:var(--orange);border-bottom-color:var(--orange)}
+.trow .btn:hover{color:var(--accent);border-bottom-color:var(--accent)}
 .trow .btn:active{transform:none}
 body.at-title header{display:none}
 body.at-title:not(.rules) #rulesCard{display:none}   /* 타이틀엔 규칙 단추 하나만. 누르면 펼쳐진다 */
@@ -157,17 +251,18 @@ body.at-title:not(.rules) #rulesCard{display:none}   /* 타이틀엔 규칙 단�
 
 .bar{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
 .chip{
-  background:#fff;border:3px solid var(--ink);border-radius:999px;
-  padding:1px 13px;font-size:15px;font-weight:700;box-shadow:2px 2px 0 var(--ink);
+  background:var(--surface);border:3px solid var(--ink);border-radius:999px;
+  padding:1px 13px;font-size:15px;font-weight:700;box-shadow:2px 2px 0 var(--shadow);
 }
 .chip.code{letter-spacing:.18em}
 .clock{
-  margin-left:auto;background:var(--yellow);border:3px solid var(--ink);border-radius:50%;
+  margin-left:auto;background:var(--yellow);color:var(--sheet-ink);
+  border:3px solid var(--sheet-ink);border-radius:50%;
   width:52px;height:52px;display:flex;align-items:center;justify-content:center;
-  font-size:24px;font-weight:700;transform:rotate(5deg);box-shadow:3px 3px 0 var(--ink);flex:none;
+  font-size:24px;font-weight:700;transform:rotate(5deg);box-shadow:3px 3px 0 var(--shadow);flex:none;
 }
 .prog{display:flex;gap:5px;margin-top:8px}
-.prog i{flex:1 1 0;height:9px;border:2px solid var(--ink);border-radius:5px;background:#fff;box-shadow:2px 2px 0 var(--ink)}
+.prog i{flex:1 1 0;height:9px;border:2px solid var(--ink);border-radius:5px;background:var(--surface);box-shadow:2px 2px 0 var(--shadow)}
 .prog i.did{background:var(--green)}
 .prog i.now{background:var(--yellow)}
 body:not(.at-title) .prog{margin:6px 0 0}
@@ -177,8 +272,8 @@ body:not(.at-title) .prog{margin:6px 0 0}
 
 /* ── 판 ── */
 .card{
-  background:#fff radial-gradient(#ede3cf 1.1px,transparent 1.3px) 0 0/20px 20px;border:3px solid var(--ink);border-radius:20px;
-  padding:20px;margin-bottom:16px;box-shadow:4px 4px 0 var(--ink);
+  background:var(--panel) radial-gradient(var(--dots) 1.1px,transparent 1.3px) 0 0/20px 20px;border:3px solid var(--ink);border-radius:20px;
+  padding:20px;margin-bottom:16px;box-shadow:4px 4px 0 var(--shadow);
 }
 .card.tilt{transform:rotate(-.5deg)}
 .card.in,.title.in{animation:in .22s ease-out}
@@ -188,12 +283,14 @@ body:not(.at-title) .prog{margin:6px 0 0}
 .lede:empty,.note:empty{display:none}
 label{display:block;font-size:15px;font-weight:700;color:var(--ink);margin:18px 0 7px}
 label:first-child{margin-top:0}
+/* 펼쳐지는 칸의 첫 이름표는 판의 첫 줄이 아니다 — 위 단추와 그 그림자에 붙어 버린다 */
+#makeBox>label:first-child,#lapBox>label:first-child{margin-top:18px}
 input[type=text]{
   width:100%;font:inherit;font-size:19px;font-weight:400;padding:12px 14px;border-radius:10px;
-  border:2px solid #cdbc9c;background:#fffdf8;color:var(--ink);box-shadow:inset 0 2px 0 rgba(61,43,31,.06);
+  border:2px solid var(--rule);background:var(--field);color:var(--ink);box-shadow:inset 0 2px 0 var(--sunk);
 }
-input[type=text]::placeholder{color:#b8a98c}
-input[type=text]:focus{outline:0;border-color:var(--orange);box-shadow:inset 0 2px 0 rgba(61,43,31,.06),0 0 0 3px rgba(232,89,12,.18)}
+input[type=text]::placeholder{color:var(--ph)}
+input[type=text]:focus{outline:0;border-color:var(--accent);box-shadow:inset 0 2px 0 var(--sunk),0 0 0 3px var(--ring)}
 input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-weight:700;text-align:center}
 .row{display:flex;gap:12px;margin-top:14px;flex-wrap:wrap}
 .row>*{flex:1 1 0;min-width:0}
@@ -201,29 +298,30 @@ input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-wei
 
 .btn{
   font:inherit;font-size:18px;font-weight:700;padding:9px 14px;border-radius:14px;cursor:pointer;
-  border:3px solid var(--ink);background:#fff;color:var(--ink);box-shadow:3px 3px 0 var(--ink);
+  border:3px solid var(--ink);background:var(--surface);color:var(--ink);box-shadow:3px 3px 0 var(--shadow);
   transition:transform .05s,box-shadow .05s;
 }
-.btn:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--ink)}
-.btn:disabled{opacity:.45;cursor:default;box-shadow:2px 2px 0 var(--ink)}
-.btn.go{background:linear-gradient(#86e59a,var(--green) 45%)}
-.btn.big{font-size:23px;padding:13px;border-width:3px;box-shadow:4px 4px 0 var(--ink);border-radius:14px;width:100%}
-.btn.sm{font-size:15px;padding:5px 11px;border-width:3px;border-radius:11px;box-shadow:2px 2px 0 var(--ink);flex:0 0 auto}
+.btn:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--shadow)}
+.btn:disabled{opacity:.45;cursor:default;box-shadow:2px 2px 0 var(--shadow)}
+.btn.go{background:linear-gradient(#86e59a,var(--green) 45%);color:var(--sheet-ink);border-color:var(--sheet-ink)}
+.btn.big{font-size:23px;padding:13px;border-width:3px;box-shadow:4px 4px 0 var(--shadow);border-radius:14px;width:100%}
+.btn.sm{font-size:15px;padding:5px 11px;border-width:3px;border-radius:11px;box-shadow:2px 2px 0 var(--shadow);flex:0 0 auto}
 
 /* ── 고르기 단추 (난이도·셈법) ── */
 .pickrow{display:flex;gap:7px;margin-top:5px}
 .pickrow button{
   flex:1 1 0;font:inherit;font-size:18px;font-weight:700;cursor:pointer;padding:9px 4px;
-  border:3px solid var(--ink);border-radius:12px;background:#fff;color:var(--ink);box-shadow:2px 2px 0 var(--ink);
+  border:3px solid var(--ink);border-radius:12px;background:var(--surface);color:var(--ink);box-shadow:2px 2px 0 var(--shadow);
 }
-.pickrow button.on{background:var(--yellow)}
+.pickrow button.on{background:var(--yellow);color:var(--sheet-ink);border-color:var(--sheet-ink)}
 
 /* ── 방 번호 표찰 — 옆 사람에게 불러 주는 용도 ── */
 .codebox{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:6px 14px;padding:10px 14px;
-  background:var(--yellow);border:3px solid var(--ink);border-radius:14px;box-shadow:4px 4px 0 var(--ink);transform:rotate(-.6deg);margin-bottom:12px}
-.codebox .cap{font-size:14px;color:#7a5a1a}
+  background:var(--yellow);color:var(--sheet-ink);border:3px solid var(--sheet-ink);border-radius:14px;
+  box-shadow:4px 4px 0 var(--shadow);transform:rotate(-.6deg);margin-bottom:12px}
+.codebox .cap{font-size:14px;color:var(--tint-dim)}
 .codebox .code{font-size:clamp(28px,8vw,40px);letter-spacing:.22em;font-weight:700;line-height:1;text-shadow:2px 2px 0 rgba(61,43,31,.18)}
-.codebox .btn{background:#fff}
+.codebox .btn{background:var(--sheet);color:var(--sheet-ink);border-color:var(--sheet-ink)}
 .who .p.ghost{border-style:dashed;background:transparent;color:var(--dim);box-shadow:none;opacity:.7}
 .who .p.ghost .dot{background:transparent;border-style:dashed}
 
@@ -231,36 +329,39 @@ input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-wei
 .who{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px}
 .who .p{
   display:flex;align-items:center;gap:5px;font-size:16px;font-weight:700;
-  padding:2px 11px;border-radius:999px;background:#fff;border:3px solid var(--ink);box-shadow:2px 2px 0 var(--ink);
+  padding:2px 11px;border-radius:999px;background:var(--surface);border:3px solid var(--ink);box-shadow:2px 2px 0 var(--shadow);
 }
 .who .p .dot{width:9px;height:9px;border-radius:50%;background:var(--green);flex:none;border:2px solid var(--ink)}
 .who .p.off{opacity:.42}
 .who .p.off .dot{background:var(--dim)}
-.who .p.ok{background:var(--green)}
+.who .p.ok{background:var(--green);color:var(--sheet-ink);border-color:var(--sheet-ink)}
 
 /* ── 제시어 카드 ── */
 .six{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:9px}
 .six button{
   font:inherit;font-size:20px;font-weight:700;padding:15px 10px;cursor:pointer;text-align:center;
-  border:3px solid var(--ink);border-radius:16px;color:var(--ink);
-  background:var(--card) linear-gradient(90deg,transparent 0 13px,#f06595 13px 16px,transparent 16px),
+  border:3px solid var(--sheet-ink);border-radius:16px;color:var(--sheet-ink);
+  background:var(--sheet) linear-gradient(90deg,transparent 0 13px,#f06595 13px 16px,transparent 16px),
              repeating-linear-gradient(180deg,transparent 0 21px,#dbe7f3 21px 22px);
-  box-shadow:3px 3px 0 var(--ink);word-break:keep-all;line-height:1.3;
+  box-shadow:3px 3px 0 var(--shadow);word-break:keep-all;line-height:1.3;
 }
 .six button:nth-child(2n){transform:rotate(.8deg)}
 .six button:nth-child(3n){transform:rotate(-1deg)}
-.six button:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--ink)}
+.six button:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--shadow)}
 .six button.on{background:var(--yellow)}
 
 /* ── 앞 쪽 보여 주기 ── */
 .prev{
-  background:var(--blue);border:3px solid var(--ink);border-radius:16px;padding:11px;
-  text-align:center;margin-bottom:12px;box-shadow:4px 4px 0 var(--ink);transform:rotate(.7deg);
+  background:var(--blue);border:3px solid var(--sheet-ink);border-radius:16px;padding:11px;
+  text-align:center;margin-bottom:12px;box-shadow:4px 4px 0 var(--shadow);transform:rotate(.7deg);
 }
-.prev .cap{font-size:16px;color:#194663}
-.prev .big{font-size:clamp(26px,7.5vw,36px);font-weight:700;line-height:1.15;color:#fff;text-shadow:2px 2px 0 var(--ink);word-break:keep-all}
-.prev.shotbox{background:#fff;transform:rotate(-.6deg)}
-.prev.shotbox .cap{color:var(--dim)}
+.prev .cap{font-size:16px;color:var(--tint-dim)}
+/* 제시어는 파란 칠 위에 앉는다 — 흰 글자로는 어느 테마에서도 대비가 안 나와 종이 쪽 검정으로 긋고
+   밝은 그림자를 받친다 */
+.prev .big{font-size:clamp(26px,7.5vw,36px);font-weight:700;line-height:1.15;color:var(--sheet-ink);
+  text-shadow:2px 2px 0 rgba(255,255,255,.45);word-break:keep-all}
+.prev.shotbox{background:var(--sheet);transform:rotate(-.6deg)}
+.prev.shotbox .cap{color:var(--sheet-dim)}
 
 /* ── 그림판 — 스프링 스케치북 한 장 ── */
 .sheet{position:relative;margin-top:16px}
@@ -268,7 +369,7 @@ input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-wei
 .rings svg{display:block;width:100%;height:100%}
 .pad{
   position:relative;width:100%;aspect-ratio:1;border-radius:14px;overflow:hidden;
-  border:4px solid var(--ink);background:var(--card);touch-action:none;box-shadow:6px 6px 0 var(--yellow);
+  border:4px solid var(--sheet-ink);background:var(--sheet);touch-action:none;box-shadow:6px 6px 0 var(--yellow);
 }
 .pad::after{content:"";position:absolute;right:0;bottom:0;width:30px;height:30px;   /* 접힌 귀퉁이 */
   background:linear-gradient(135deg,transparent 50%,#e6dcc4 50%,#d9cfb5);border-top-left-radius:6px;pointer-events:none}
@@ -279,8 +380,8 @@ input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-wei
 
 /* 옆 판 — 크레용 통, 굵기·되돌리기 한 줄, 맨 밑에 제출 */
 .side{display:flex;flex-direction:column;gap:12px;margin-top:14px}
-.tray{background:#fbf3df;border:3px solid var(--ink);border-radius:14px;padding:16px 10px 6px;box-shadow:3px 3px 0 var(--ink);
-  background-image:linear-gradient(180deg,transparent 0 70%,#eadfc6 70%)}
+.tray{background:var(--tray);border:3px solid var(--ink);border-radius:14px;padding:16px 10px 6px;box-shadow:3px 3px 0 var(--shadow);
+  background-image:linear-gradient(180deg,transparent 0 70%,var(--tray-lo) 70%)}
 .tools2{align-items:center;margin-top:0;gap:8px}
 .tools2 .nibs{margin:0 auto 0 0}
 .tools2 .btn{flex:0 0 auto}
@@ -290,14 +391,15 @@ input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-wei
 .pens button svg{display:block;width:30px;height:78px}
 .pens button.eraser svg{height:56px}
 .pens button.on{transform:translateY(-12px)}
-.pens button.on svg{filter:drop-shadow(0 4px 0 rgba(61,43,31,.35))}
+.pens button.on svg{filter:drop-shadow(0 4px 0 var(--drop))}
 .nibs{display:flex;gap:5px}
 .nibs button{
-  width:32px;height:32px;border-radius:10px;border:3px solid var(--ink);background:#fff;cursor:pointer;
-  display:grid;place-items:center;padding:0;box-shadow:2px 2px 0 var(--ink);
+  width:32px;height:32px;border-radius:10px;border:3px solid var(--ink);background:var(--surface);cursor:pointer;
+  display:grid;place-items:center;padding:0;box-shadow:2px 2px 0 var(--shadow);
 }
 .nibs button i{display:block;border-radius:50%;background:var(--ink)}
-.nibs button.on{background:var(--yellow)}
+.nibs button.on{background:var(--yellow);border-color:var(--sheet-ink)}
+.nibs button.on i{background:var(--sheet-ink)}
 
 /* 넓은 화면: 스케치북은 왼쪽에 화면 높이만큼, 옆 판은 오른쪽에 위아래 꽉 차게 */
 @media (min-width:760px){
@@ -329,41 +431,42 @@ input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-wei
 /* ── 공개 — 스케치북 한 권. 지금 쪽 하나가 크게, 지난 쪽은 아래에 작게 ── */
 .book{position:relative;margin-top:10px}
 .stage{position:relative;min-height:80px}
-.pg{position:relative;border:3px solid var(--ink);border-radius:14px;padding:12px 13px 11px;box-shadow:5px 5px 0 var(--yellow);display:flex;flex-direction:column;
-  background:var(--card) radial-gradient(#ede3cf 1.1px,transparent 1.3px) 0 0/20px 20px}
+/* 공책 쪽은 종이다 — 여기 적힌 말과 그림은 두 테마에서 같은 얼굴이어야 한다 */
+.pg{position:relative;border:3px solid var(--sheet-ink);border-radius:14px;padding:12px 13px 11px;box-shadow:5px 5px 0 var(--yellow);display:flex;flex-direction:column;
+  color:var(--sheet-ink);background:var(--sheet) radial-gradient(var(--sheet-dots) 1.1px,transparent 1.3px) 0 0/20px 20px}
 .stage .pg.now{animation:settle .32s ease-out}
 @keyframes settle{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.stage .pg.now{animation:none}}
-.pg .by{display:flex;align-items:center;gap:8px;font-size:15px;color:var(--dim);margin-bottom:6px}
+.pg .by{display:flex;align-items:center;gap:8px;font-size:15px;color:var(--sheet-dim);margin-bottom:6px}
 .pg .said{font-size:clamp(22px,6vw,28px);font-weight:700;line-height:1.2;word-break:keep-all}
 /* 무대 위 쪽은 말이든 그림이든 같은 크기 — 넘길 때 판이 들썩이지 않게 */
 .stage .pg{aspect-ratio:1}
 .stage .pg .said{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;font-size:clamp(28px,5vw,44px);padding:0 10px}
 .stage .pg.cover{background-color:var(--yellow);align-items:center;justify-content:center;text-align:center;gap:10px}
 .stage .pg.cover .said{flex:0;font-size:clamp(26px,4.6vw,40px)}
-.stage .pg.cover .said b{color:var(--orange)}
-.stage .pg.cover .hint{font-size:17px;color:var(--dim)}
-.stage .pg.cover .q{font-size:clamp(70px,14vw,120px);line-height:1;color:var(--ink);opacity:.18;font-weight:700}
+.stage .pg.cover .said b{color:var(--sheet-accent)}
+.stage .pg.cover .hint{font-size:17px;color:var(--tint-dim)}
+.stage .pg.cover .q{font-size:clamp(70px,14vw,120px);line-height:1;color:var(--sheet-ink);opacity:.18;font-weight:700}
 /* 한 권이 끝났다 — 마지막 쪽 위에 도장이 쾅 */
-.stamp{position:absolute;right:6%;bottom:9%;font-size:clamp(44px,7vw,74px);font-weight:700;color:#e03131;line-height:1.15;
-  border:5px solid #e03131;border-radius:16px;padding:2px 18px 0;transform:rotate(-14deg);opacity:.88;
+.stamp{position:absolute;right:6%;bottom:9%;font-size:clamp(44px,7vw,74px);font-weight:700;color:var(--red);line-height:1.15;
+  border:5px solid var(--red);border-radius:16px;padding:2px 18px 0;transform:rotate(-14deg);opacity:.88;
   animation:stamp .38s cubic-bezier(.2,1.5,.4,1) both;pointer-events:none;background:rgba(255,253,248,.55)}
 @keyframes stamp{from{opacity:0;transform:rotate(-14deg) scale(2.6)}to{opacity:.88;transform:rotate(-14deg) scale(1)}}
 @media (prefers-reduced-motion:reduce){.stamp{animation:none}}
 /* 그림을 보여 주는 자리. 폭을 여기서 못 박아 둬야 한다 — 캔버스는 폭이 없으면
    다시 그릴 때마다 제 속성값을 따라 한없이 커진다 */
-.shot{width:100%;aspect-ratio:1;border-radius:12px;background:var(--card);border:3px solid var(--ink);display:block}
-.pg .tab{position:absolute;right:-3px;top:-3px;font-style:normal;font-size:13px;font-weight:700;color:var(--ink);
-  background:var(--yellow);border:3px solid var(--ink);border-radius:0 12px 0 12px;padding:1px 10px;box-shadow:2px 2px 0 var(--ink)}
-.pg.first .tab{background:#fff}
+.shot{width:100%;aspect-ratio:1;border-radius:12px;background:var(--sheet);border:3px solid var(--sheet-ink);display:block}
+.pg .tab{position:absolute;right:-3px;top:-3px;font-style:normal;font-size:13px;font-weight:700;color:var(--sheet-ink);
+  background:var(--yellow);border:3px solid var(--sheet-ink);border-radius:0 12px 0 12px;padding:1px 10px;box-shadow:2px 2px 0 var(--sheet-ink)}
+.pg.first .tab{background:var(--sheet)}
 .pg .by{padding-right:70px}
 .pg.first{background-color:var(--yellow)}
 .pg.last{background-color:var(--green)}
-.pg.miss .said{color:var(--dim)}
+.pg.miss .said{color:var(--sheet-dim)}
 
 /* 지난 쪽들 — 아래에 작게 쌓인다 */
 .past{display:flex;flex-direction:column;gap:9px;margin-top:16px}
-.past .pg{padding:8px 11px;box-shadow:3px 3px 0 var(--ink);display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center}
+.past .pg{padding:8px 11px;box-shadow:3px 3px 0 var(--shadow);display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center}
 .past .pg .by{margin:0;grid-column:1/-1}
 .past .pg .said{font-size:19px}
 .past .pg .shot{width:150px;border-width:2px}
@@ -377,21 +480,21 @@ input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-wei
 /* ── 공책첩 — 투표할 때와 끝나고 다시 볼 때. 한 권씩 탭으로, 쪽들은 격자로 ── */
 .tabs{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
 .tabs button{font:inherit;font-size:15px;font-weight:700;padding:5px 12px;border:3px solid var(--ink);border-radius:11px;
-  background:#fff;color:var(--ink);cursor:pointer;box-shadow:2px 2px 0 var(--ink)}
-.tabs button.on{background:var(--yellow)}
+  background:var(--surface);color:var(--ink);cursor:pointer;box-shadow:2px 2px 0 var(--shadow)}
+.tabs button.on{background:var(--yellow);color:var(--sheet-ink);border-color:var(--sheet-ink)}
 .alb{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px;margin-top:14px;padding:5px;
   max-height:calc(100vh - 330px);overflow:auto}
-.alb .pg{aspect-ratio:1;padding:8px 10px 9px;box-shadow:3px 3px 0 var(--ink)}
+.alb .pg{aspect-ratio:1;padding:8px 10px 9px;box-shadow:3px 3px 0 var(--shadow)}
 .alb .pg .by{font-size:13px;padding-right:44px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
 .alb .pg .tab{font-size:12px;padding:0 8px}
 .alb .pg .said{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;font-size:20px;padding:0 4px}
 .alb .pg .shot{border-width:2px;flex:1;min-height:0;width:auto;max-width:100%;margin:0 auto}
 .alb.pick .pg{cursor:pointer;transition:transform .12s}
 .alb.pick .pg:hover{transform:translateY(-2px)}
-.alb .pg.on{outline:4px solid var(--orange);outline-offset:3px;background-color:#fff3e0}
-.alb .pg.on .tab{background:var(--orange);color:#fff}
+.alb .pg.on{outline:4px solid var(--sheet-accent);outline-offset:3px;background-color:#fff3e0}
+.alb .pg.on .tab{background:var(--sheet-accent);color:#fff}
 #albSel{font-size:17px;margin:12px 0 0;min-height:24px}
-#albSel b{color:var(--orange)}
+#albSel b{color:var(--accent)}
 @media (min-width:760px){
   #sAlbum .alb{grid-template-columns:repeat(var(--cols,6),minmax(0,1fr))}   /* 쪽 수만큼, 여섯까지 */
 }
@@ -406,10 +509,10 @@ input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-wei
 #top.many .win{flex:1 1 150px;max-width:200px}   /* 공동 1등이 다섯 넘으면 작게 — 화면에 다 들어가게 */
 #sDone .row{justify-content:center}
 .win .shot{width:min(100%,calc(100vh - 360px));margin:0 auto}
-.win{border:3px solid var(--ink);border-radius:18px;background:var(--yellow);padding:13px;
-  box-shadow:4px 4px 0 var(--ink);margin-bottom:4px;transform:rotate(-.6deg)}
-.win .who{font-size:17px;color:#7a5a1a;margin:0 0 7px;display:flex;align-items:baseline;gap:6px}
-.win .who b{font-size:21px;color:var(--ink)}
+.win{border:3px solid var(--sheet-ink);border-radius:18px;background:var(--yellow);color:var(--sheet-ink);padding:13px;
+  box-shadow:4px 4px 0 var(--shadow);margin-bottom:4px;transform:rotate(-.6deg)}
+.win .who{font-size:17px;color:var(--tint-dim);margin:0 0 7px;display:flex;align-items:baseline;gap:6px}
+.win .who b{font-size:21px;color:var(--sheet-ink)}
 .win .who i{margin-left:auto;font-style:normal;font-weight:700}
 .win .said{font-size:clamp(24px,7vw,32px);font-weight:700;line-height:1.2;word-break:keep-all}
 
@@ -429,51 +532,64 @@ input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-wei
 /* ── 게임 고르기 ── */
 .games{display:grid;gap:9px;margin-top:5px}
 .games button{font:inherit;text-align:left;cursor:pointer;padding:11px 14px;border:3px solid var(--ink);border-radius:14px;
-  background:#fff;color:var(--ink);box-shadow:3px 3px 0 var(--ink);display:grid;gap:2px}
-.games button.on{background:var(--yellow)}
+  background:var(--surface);color:var(--ink);box-shadow:3px 3px 0 var(--shadow);display:grid;gap:2px}
+.games button.on{background:var(--yellow);color:var(--sheet-ink);border-color:var(--sheet-ink)}
 .games button b{font-size:19px}
 .games button span{font-size:15px;color:var(--dim)}
-.games button.on span{color:#7a5a1a}
+.games button.on span{color:var(--tint-dim)}
 .check{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;margin:12px 0 0}
 .check input{width:19px;height:19px;accent-color:var(--orange)}
 
 /* ── 열린 방 ── */
 .rooms{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:8px;max-height:270px;overflow:auto}
 .rooms li{display:flex;align-items:center;gap:8px;flex-wrap:wrap;cursor:pointer;padding:8px 12px;
-  border:3px solid var(--ink);border-radius:13px;background:#fff;box-shadow:2px 2px 0 var(--ink)}
-.rooms li:hover{background:var(--yellow)}
+  border:3px solid var(--ink);border-radius:13px;background:var(--surface);box-shadow:2px 2px 0 var(--shadow)}
+/* 짚으면 노란 칠이 깔린다 — 그 위 글자는 종이 쪽 검정으로 갈아 낀다 */
+.rooms li:hover{background:var(--yellow);color:var(--sheet-ink);border-color:var(--sheet-ink)}
+.rooms li:hover .rg{color:var(--tint-dim)}
+.rooms li:hover .live{color:var(--sheet-accent)}
 .rooms li .rc{font-weight:700;letter-spacing:.14em}
 .rooms li .rg{font-size:15px;color:var(--dim)}
 .rooms li .rn{margin-left:auto;font-size:15px;font-weight:700}
-.rooms li .live{color:var(--orange)}
+.rooms li .live{color:var(--accent)}
 
 /* ── 스케치퀴즈 ── */
-.qbar{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-.qbar .big{letter-spacing:.12em}
 .board{display:flex;flex-wrap:wrap;gap:6px}
 .board .p{display:flex;align-items:center;gap:5px;font-size:15px;font-weight:700;padding:2px 10px;border-radius:999px;
-  background:#fff;border:3px solid var(--ink);box-shadow:2px 2px 0 var(--ink)}
-.board .p.ok{background:var(--green)}
-.board .p.now{background:var(--yellow)}
+  background:var(--surface);border:3px solid var(--ink);box-shadow:2px 2px 0 var(--shadow)}
+.board .p.ok{background:var(--green);color:var(--sheet-ink);border-color:var(--sheet-ink)}
+.board .p.now{background:var(--yellow);color:var(--sheet-ink);border-color:var(--sheet-ink)}
 .board .p.off{opacity:.45}
-.board .p i{font-style:normal;color:var(--orange)}
-.chat{height:190px;overflow:auto;background:#fffdf8;border:3px solid var(--ink);border-radius:14px;padding:8px 11px;
-  box-shadow:3px 3px 0 var(--ink);font-size:16px;display:flex;flex-direction:column;gap:3px}
+.board .p i{font-style:normal;color:var(--accent)}
+.board .p.ok i,.board .p.now i{color:var(--sheet-accent)}
+#qWord{letter-spacing:.14em}
+.chat{height:190px;overflow:auto;background:var(--field);border:3px solid var(--ink);border-radius:14px;padding:8px 11px;
+  box-shadow:3px 3px 0 var(--shadow);font-size:16px;display:flex;flex-direction:column;gap:3px}
 .chat p{margin:0;word-break:break-all}
 .chat p b{color:var(--dim);font-weight:700}
-.chat p.ok{color:#2b8a3e;font-weight:700}
-.chat p.ok b{color:#2b8a3e}
-.chat p.near{color:var(--orange)}
+.chat p.ok{color:var(--ok);font-weight:700}
+.chat p.ok b{color:var(--ok)}
+.chat p.near{color:var(--accent)}
 .chat p.sys{color:var(--dim)}
-.chat p.in b,.chat p.in{color:#1971c2}
+.chat p.in b,.chat p.in{color:var(--say)}
 .chatbar{margin-top:0;flex-wrap:nowrap}
 .chatbar input[type=text]{flex:1 1 60px;width:auto;min-width:0;font-size:17px;padding:8px 11px}
 .chatbar .btn{flex:0 0 auto}
 #sQuiz .side{gap:9px}
 @media (min-width:760px){ .chat{height:calc(100vh - 470px);min-height:150px} }
 
+/* ── 테마 단추 — 허브의 다른 게임과 같은 꼴. 고른 값은 기억하고, 없으면 기기 설정을 따른다 ── */
+.icon-btn{
+  width:38px;height:38px;flex:none;display:grid;place-items:center;padding:0;cursor:pointer;
+  border:3px solid var(--ink);border-radius:12px;background:var(--surface);color:var(--ink);
+  box-shadow:2px 2px 0 var(--shadow);transition:transform .05s,box-shadow .05s;
+}
+.icon-btn svg{display:block;width:19px;height:19px}
+.icon-btn:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--shadow)}
+.title .icon-btn{position:absolute;right:0;top:0}
+
 .rules{font-size:16px;color:var(--dim);padding-left:20px;margin:8px 0 0}
-.title .disclaimer{font-size:12.5px;color:#8f8068;line-height:1.65;margin:26px auto 0;max-width:560px;text-align:center}
+.title .disclaimer{font-size:12.5px;color:var(--dim);line-height:1.65;margin:26px auto 0;max-width:560px;text-align:center}
 .title .disclaimer a{color:inherit}
 .rules li{margin:5px 0}
 summary{cursor:pointer;font-size:17px;font-weight:700;color:var(--dim)}
@@ -492,6 +608,7 @@ summary{cursor:pointer;font-size:17px;font-weight:700;color:var(--dim)}
       <span class="chip hide" id="step"></span>
       <span class="clock num hide" id="clock">0</span>
       <button class="btn sm hide" id="bLeave">나가기</button>
+      <button class="icon-btn" data-theme-btn aria-label="테마 바꾸기"><svg viewBox="0 0 24 24"><use href="#i-moon"/></svg></button>
     </div>
     <div class="prog hide" id="prog" aria-hidden="true"></div>
   </header>
@@ -499,6 +616,7 @@ summary{cursor:pointer;font-size:17px;font-weight:700;color:var(--dim)}
   <!-- 타이틀 -->
   <section class="title" id="sTitle">
     <a class="back" href="https://41ways.github.io/norara/">← 레드버튼</a>
+    <button class="icon-btn" data-theme-btn aria-label="테마 바꾸기"><svg viewBox="0 0 24 24"><use href="#i-moon"/></svg></button>
     <div class="burst" id="fanfare" aria-hidden="true"></div>
     <h1 class="logo draw" aria-label="텔레스트레이션">
       <svg class="ink" viewBox="0 0 540 112" font-size="70" aria-hidden="true"><g class="l1"><text class="sh" x="28" y="85" rotate="-4">텔</text><text class="fc" x="26" y="83" rotate="-4" style="stroke:#e03131;fill:#e03131">텔</text></g><g class="l2"><text class="sh" x="99" y="85" rotate="3">레</text><text class="fc" x="97" y="83" rotate="3" style="stroke:#e8590c;fill:#e8590c">레</text></g><g class="l3"><text class="sh" x="170" y="85" rotate="-2">스</text><text class="fc" x="168" y="83" rotate="-2" style="stroke:#ffd43b;fill:#ffd43b">스</text></g><g class="l4"><text class="sh" x="241" y="85" rotate="4">트</text><text class="fc" x="239" y="83" rotate="4" style="stroke:#51cf66;fill:#51cf66">트</text></g><g class="l5"><text class="sh" x="312" y="85" rotate="-3">레</text><text class="fc" x="310" y="83" rotate="-3" style="stroke:#74c0fc;fill:#74c0fc">레</text></g><g class="l6"><text class="sh" x="383" y="85" rotate="2">이</text><text class="fc" x="381" y="83" rotate="2" style="stroke:#f06595;fill:#f06595">이</text></g><g class="l7"><text class="sh" x="454" y="85" rotate="-4">션</text><text class="fc" x="452" y="83" rotate="-4" style="stroke:#e8590c;fill:#e8590c">션</text></g></svg>
@@ -726,6 +844,11 @@ summary{cursor:pointer;font-size:17px;font-weight:700;color:var(--dim)}
   </section>
 </div>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></g></symbol>
+</svg>
+
 <script>
 'use strict';
 var $ = function(s){ return document.querySelector(s); };
@@ -735,6 +858,8 @@ var esc = function(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, func
 /* 크레용 여덟 자루. 15번은 지우개 — 바탕색으로 덧칠한다 */
 var PENS = ['#3a2f2a','#e8323a','#f58a2a','#f5d020','#59b84a','#3178d6','#8a4fb8','#ee3f8f'];
 var NIBS = [6, 13, 26];                       // 1024 기준 굵기 — 크레용이니 굵직하게
+/* 도화지는 밝은 테마든 어두운 테마든 이 흰색 하나다. 어두운 데서 그린 그림을 밝은 데서 다시 볼 때
+   (그 반대도) 종이가 바뀌면 획이 묻히거나 뜬다 — 테마를 타는 것은 판 둘레뿐이다 */
 var PAPER = '#fffdf8';
 var ERASER = 15;
 
@@ -751,6 +876,28 @@ function toast(m){
   var t = document.createElement('div'); t.className = 'toast'; t.textContent = m;
   document.body.appendChild(t); setTimeout(function(){ t.remove(); }, 2200);
 }
+
+// ══════════════════════════════ 테마
+/* 저장된 값이 없으면 기기 설정을 따른다 — 그 판단은 <head> 의 쪽지가 첫 페인트 전에 이미 해 뒀다.
+   여기서는 칠하기만 하고, 사람이 단추를 눌러 고른 것만 기억한다.
+   도화지 색(PAPER)은 손대지 않는다 — 어느 테마에서 그린 그림이든 같은 흰 종이 위에 있어야 한다 */
+function paintTheme(t){
+  document.documentElement.dataset.theme = t;
+  document.querySelectorAll('[data-theme-btn] use').forEach(function(u){
+    u.setAttribute('href', t === 'dark' ? '#i-sun' : '#i-moon');
+  });
+  var m = document.querySelector('meta[name="theme-color"]');
+  if (m) m.content = t === 'dark' ? '#1b1714' : '#fff6e0';
+}
+function setTheme(t){
+  paintTheme(t);
+  try { localStorage.setItem('theme', t); } catch (e) {}
+}
+document.addEventListener('click', function(e){
+  if (!e.target.closest('[data-theme-btn]')) return;
+  setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+});
+paintTheme(document.documentElement.dataset.theme || 'light');
 
 // ══════════════════════════════ 그림 그리고 보여 주기
 /** 획 목록을 캔버스에 그린다. 좌표는 0~1023 이므로 어떤 크기에도 맞춰 커진다 */
@@ -799,7 +946,10 @@ function paint(cv, strokes){
 }
 
 /* 그림판 둘 — 텔레스트레이션 것과 스케치퀴즈 것. 속은 같고, 퀴즈 쪽은 획을 그을 때마다 서버로 보낸다 */
-function newPad(cv){ return { cv:cv, strokes:[], cur:null, pen:0, nib:1, ro:false, live:null, seq:0, sent:0, tick:false }; }
+function newPad(cv){
+  return { cv:cv, strokes:[], cur:null, pen:0, nib:1, ro:false, live:null,
+           seq:Math.floor(Math.random() * 100000), sent:0, tick:false };   // 획 번호는 아무 데서나 — 새로고침해도 앞 것과 안 겹친다
+}
 var pad = newPad($('#pad')), qpad = newPad($('#qpad'));
 /* 그리는 중에는 프레임당 한 번만 — pointermove 는 한 프레임에 여러 번 온다 */
 function repaint(p){
@@ -1283,6 +1433,9 @@ function draw(){
   if (r.phase === 'lobby') {
     S.peek = false; S.albSel = null;
     S.pickFor = S.padFor = S.stageFor = S.guessFor = null;   // 지난 판 표식은 지운다 — 안 그러면 카드·그림판·무대가 그대로 남는다
+    S.qturn = S.qpickFor = S.focusFor = null;
+    if ((S.chat || []).length) { S.chat = []; renderChat(); }
+    qpad.strokes = []; qpad.live = null;
     show('#sLobby');
     $('#lobbyCode').textContent = r.code;
     $('#lobbyLede').textContent = (GAMEKO[r.game] || '') + ' · ' + r.min + '~' + r.max + '명'
@@ -1290,7 +1443,12 @@ function draw(){
     var ghosts = '';
     for (var gi = n; gi < r.min; gi++) ghosts += '<span class="p ghost"><i class="dot"></i>빈 자리</span>';   // 시작할 수 있을 때까지 빈칸을 보여 준다
     $('#whoLobby').innerHTML = whoHtml(r, false) + ghosts;
-    $('#lvRow').querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', b.dataset.v === r.level); b.disabled = !isHost; });
+    $('#lvRow').querySelectorAll('button').forEach(function(b){
+      b.classList.toggle('on', b.dataset.v === r.level);
+      b.disabled = !isHost;
+      /* 「직접 정하기」는 공책에 제 말을 적는 것 — 스케치퀴즈에는 없는 갈래다 */
+      b.classList.toggle('hide', quiz && b.dataset.v === 'custom');
+    });
     $('#secRow').querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', +b.dataset.v === r.secs); b.disabled = !isHost; });
     $('#lapBox').classList.toggle('hide', !quiz);
     $('#lapRow').querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', +b.dataset.v === r.laps); b.disabled = !isHost; });
@@ -1439,17 +1597,17 @@ function draw(){
 
 /* ══════════════ 스케치퀴즈 화면 ══════════════ */
 
-/** 점수판 한 줄씩 — 그리는 사람은 연필, 맞힌 사람은 체크 */
-function boardHtml(r){
+/** 점수판 한 줄씩 — 그리는 사람은 연필, 맞힌 사람은 체크. 끝난 판에서는 점수만 */
+function boardHtml(r, plain){
   var q = r.q || {}, by = {};
   r.players.forEach(function(p){ by[p.pid] = p; });
   return (q.scores || []).slice().sort(function(a, b){ return b.score - a.score; }).map(function(x){
     var p = by[x.pid];
     if (!p) return '';
-    var solved = (q.solved || []).indexOf(x.pid) >= 0, drawing = x.pid === q.drawer;
+    var solved = !plain && (q.solved || []).indexOf(x.pid) >= 0, drawing = !plain && x.pid === q.drawer;
     return '<span class="p' + (p.on ? '' : ' off') + (solved ? ' ok' : '') + (drawing ? ' now' : '') + '">'
       + (drawing ? '✏️ ' : solved ? '✓ ' : '') + esc(p.name) + ' ' + x.score
-      + (q.gains && q.gains[x.pid] ? ' <i>+' + q.gains[x.pid] + '</i>' : '') + '</span>';
+      + (!plain && q.gains && q.gains[x.pid] ? ' <i>+' + q.gains[x.pid] + '</i>' : '') + '</span>';
   }).join('');
 }
 
@@ -1473,6 +1631,7 @@ function drawQuiz(r, isHost){
   $('#prog').classList.add('hide');
 
   if (r.phase === 'done') {
+    $('#step').textContent = '끝';
     show('#sQDone');
     var rows = (q.scores || []).slice().sort(function(a, b){ return b.score - a.score; });
     var best = rows.length ? rows[0].score : 0;
@@ -1483,7 +1642,7 @@ function drawQuiz(r, isHost){
     $('#qTop').innerHTML = top.length
       ? '<b>' + top.join(' · ') + '</b>님 1등 · ' + best + '점'
       : '점수를 낸 사람이 없습니다';
-    $('#qFinal').innerHTML = boardHtml(r);
+    $('#qFinal').innerHTML = boardHtml(r, true);
     $('#bQAgain').classList.toggle('hide', !isHost);
     $('#qDoneNote').textContent = isHost ? '' : '방장이 다시 시작합니다';
     if (top.length && S.cheerFor !== 'q:' + r.code + ':' + q.turns) { S.cheerFor = 'q:' + r.code + ':' + q.turns; setTimeout(cheer, 150); }
@@ -1530,11 +1689,15 @@ function drawQuiz(r, isHost){
     $('#qWord').textContent = q.hint;
   }
   $('#qBoard').innerHTML = boardHtml(r);
-  var can = r.seat >= 0 && r.phase === 'qplay';
+  var can = r.seat >= 0;
   $('#qSay').disabled = !can;
   $('#qSay').placeholder = !can ? '구경 중입니다'
+    : r.phase === 'qend' ? '한마디'
     : q.mine ? '그림으로만 알려 주세요' : q.iSolved ? '맞힌 사람끼리 하는 말' : '뭘까요?';
-  if (can && !q.mine && !q.iSolved && S.focusFor !== tk) { S.focusFor = tk; $('#qSay').focus(); }
+  /* 좁은 화면에서 자판이 올라오면 그림이 가린다 — 넓은 화면에서만 먼저 잡아 준다 */
+  if (can && !q.mine && !q.iSolved && r.phase === 'qplay' && S.focusFor !== tk && window.innerWidth >= 760) {
+    S.focusFor = tk; $('#qSay').focus();
+  }
 }
 
 /**
