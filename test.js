@@ -4,8 +4,34 @@ import {
   headOf, pagesOf, kindOfPage, pageOfRound, bookOf, seatOfPage, trim, SECS, secsOf,
 } from './src/rules.js';
 import { EASY, MEDIUM, HARD, card } from './src/words.js';
+import { QUIZ_MIN, LAPS, same, near, scoreOf, hintSlots, maskOf, hintCount } from './src/quiz.js';
 
 const assert = (c, m) => { if (!c) { console.error('실패:', m); process.exit(1); } };
+
+/* ── 스케치퀴즈 셈 ── */
+{
+  assert(same('가는 날이 장날', '가는날이장날'), '띄어쓰기는 안 따진다');
+  assert(same('해파리', '  해파리 '), '앞뒤 빈칸은 안 따진다');
+  assert(!same('해파리', '해파리들'), '다른 말은 오답');
+  assert(near('문어', '물어') && near('해파리', '해파리들') && !near('문어', '코끼리'), '아까운 답 가리기');
+
+  // 빨리 맞힐수록 점수가 크고, 시간이 다 가도 최소는 준다
+  assert(scoreOf(60, 60) > scoreOf(30, 60) && scoreOf(0, 60) === 50, '맞힌 점수');
+
+  // 힌트는 세 글자에 한 자꼴, 시간이 갈수록 는다
+  const w = '모래시계', slots = hintSlots(w, () => .5);
+  assert(slots.length >= 1 && slots.length <= Math.ceil(w.length / 3), '힌트 자리 수');
+  assert(hintCount(60, 60, slots.length) === 0 && hintCount(1, 60, slots.length) === slots.length, '힌트 여는 차례');
+  assert(maskOf(w, []) === '○○○○' && maskOf(w, [0]) === '모○○○', '힌트 모양');
+  assert(maskOf('가는 날이 장날', []) === '○○ ○○ ○○', '띄어쓰기는 그대로 보인다');
+
+  // 차례는 사람 수 × 바퀴. 모두가 같은 수만큼 그린다
+  for (let n = QUIZ_MIN; n <= MAX_PLAYERS; n++) for (const laps of LAPS) {
+    const drew = new Array(n).fill(0);
+    for (let t = 0; t < n * laps; t++) drew[t % n] += 1;
+    assert(drew.every(c => c === laps), n + '명 ' + laps + '바퀴: 그리는 횟수가 다름');
+  }
+}
 
 /* ── 공책 돌리기 ── */
 for (let n = MIN_PLAYERS; n <= MAX_PLAYERS; n++) {

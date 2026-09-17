@@ -97,7 +97,7 @@ function seat(i) {
 
     if (v.phase === 'lobby') {
       acted = new Set();                  // 한 판 더 — 기억을 비운다
-      if (boss && v.players.length >= 4 && !starting) {
+      if (boss && v.players.length >= (v.min || 4) && !starting) {
         starting = true;
         console.log(name, '(방장) 3초 뒤 시작합니다 — 더 들어올 사람 있으면 지금');
         setTimeout(() => say({ t: 'start' }), 3000);
@@ -105,6 +105,31 @@ function seat(i) {
       return;
     }
     starting = false;
+
+    /* ── 스케치퀴즈 ── */
+    if (v.game === 'quiz') {
+      const q = v.q || {};
+      const at = v.phase + ':' + q.turn;
+      if (v.phase === 'qpick' && q.mine && !acted.has(at)) {
+        acted.add(at);
+        setTimeout(() => say({ t: 'qpick', i: Math.floor(Math.random() * 3) }), 800 + Math.random() * 1200);
+        return;
+      }
+      if (v.phase === 'qplay' && q.mine && !acted.has(at)) {
+        acted.add(at);
+        if (blank) return;
+        doodle(i + q.turn).forEach((st, k) => setTimeout(() => say({ t: 'ink', s: st }), 600 + k * 700));
+        return;
+      }
+      if (v.phase === 'qplay' && !q.mine && !q.iSolved && !acted.has(at + ':say')) {
+        acted.add(at + ':say');
+        const shot = () => { if (!q.iSolved) say({ t: 'say', w: pick(GUESS) }); };
+        setTimeout(shot, 2500 + Math.random() * 3000);
+        setTimeout(shot, 7000 + Math.random() * 4000);
+        return;
+      }
+      return;
+    }
 
     if (boss && v.phase === 'reveal') {
       const at = 'turn:' + v.reveal.b + ':' + v.reveal.i;

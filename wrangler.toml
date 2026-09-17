@@ -18,6 +18,15 @@ directory = "./public"
 name = "ROOM"
 class_name = "Room"
 
+# 열린 방 목록. 방마다 DO 가 따로라 밖에서는 못 보므로, 방이 스스로 여기에 적어 둔다
+[[durable_objects.bindings]]
+name = "LOBBY"
+class_name = "Lobby"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Room"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["Lobby"]

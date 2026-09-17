@@ -8,7 +8,10 @@
  * 방 번호가 곧 Durable Object 이름이다. 같은 번호를 친 사람은 같은 방으로 간다.
  */
 import { Room } from './room.js';
-export { Room };
+import { Lobby } from './lobby.js';
+export { Room, Lobby };
+
+const lobby = env => env.LOBBY.get(env.LOBBY.idFromName('main'));
 
 /* 헷갈리는 글자(I·O·0·1)는 뺐다. 불러 주기 좋게 네 글자 */
 const ALPHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -45,6 +48,12 @@ export default {
       if (!CODE_RE.test(code)) return new Response('방 번호가 이상합니다', { status: 400 });
       const id = env.ROOM.idFromName(code);
       return env.ROOM.get(id).fetch(req);
+    }
+
+    /* 지금 열려 있는 방들. 문간에서 몇 초마다 한 번씩 물어본다 */
+    if (url.pathname === '/rooms') {
+      const res = await lobby(env).fetch('https://l/list').catch(() => null);
+      return res ? json(await res.json()) : json({ rooms: [], people: 0 });
     }
 
     if (url.pathname === '/health') return json({ ok: true });

@@ -302,10 +302,10 @@ input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-wei
 /* 넓은 화면: 스케치북은 왼쪽에 화면 높이만큼, 옆 판은 오른쪽에 위아래 꽉 차게 */
 @media (min-width:760px){
   body.wide .wrap{max-width:1040px}
-  #sDraw,#sGuess{display:grid;grid-template-columns:minmax(0,1fr) 340px;grid-template-rows:auto 1fr;gap:10px 24px;align-items:stretch}
-  #sDraw>.prev,#sGuess>.prev{grid-column:2;grid-row:1;transform:none;margin-bottom:6px}
-  #sDraw>.sheet,#sGuess>.sheet{grid-column:1;grid-row:1/span 2;margin:0 auto;width:min(100%,calc(100vh - 215px))}
-  #sDraw>.side,#sGuess>.side{grid-column:2;grid-row:2;margin-top:0}
+  #sDraw,#sGuess,#sQuiz{display:grid;grid-template-columns:minmax(0,1fr) 340px;grid-template-rows:auto 1fr;gap:10px 24px;align-items:stretch}
+  #sDraw>.prev,#sGuess>.prev,#sQuiz>.prev{grid-column:2;grid-row:1;transform:none;margin-bottom:6px}
+  #sDraw>.sheet,#sGuess>.sheet,#sQuiz>.sheet{grid-column:1;grid-row:1/span 2;margin:0 auto;width:min(100%,calc(100vh - 215px))}
+  #sDraw>.side,#sGuess>.side,#sQuiz>.side{grid-column:2;grid-row:2;margin-top:0}
   #sGuess>.prev{background:none;border:0;box-shadow:none;padding:8px 0 0;text-align:left;margin-bottom:0}
   #sGuess>.prev .cap{font-size:24px;font-weight:700;color:var(--ink)}
   #sGuess>.side label{margin-top:4px}
@@ -426,6 +426,52 @@ input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-wei
   background:var(--ink);color:var(--paper);font-size:17px;font-weight:700;padding:7px 18px;
   border-radius:999px;box-shadow:3px 3px 0 rgba(0,0,0,.25);
 }
+/* ── 게임 고르기 ── */
+.games{display:grid;gap:9px;margin-top:5px}
+.games button{font:inherit;text-align:left;cursor:pointer;padding:11px 14px;border:3px solid var(--ink);border-radius:14px;
+  background:#fff;color:var(--ink);box-shadow:3px 3px 0 var(--ink);display:grid;gap:2px}
+.games button.on{background:var(--yellow)}
+.games button b{font-size:19px}
+.games button span{font-size:15px;color:var(--dim)}
+.games button.on span{color:#7a5a1a}
+.check{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;margin:12px 0 0}
+.check input{width:19px;height:19px;accent-color:var(--orange)}
+
+/* ── 열린 방 ── */
+.rooms{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:8px;max-height:270px;overflow:auto}
+.rooms li{display:flex;align-items:center;gap:8px;flex-wrap:wrap;cursor:pointer;padding:8px 12px;
+  border:3px solid var(--ink);border-radius:13px;background:#fff;box-shadow:2px 2px 0 var(--ink)}
+.rooms li:hover{background:var(--yellow)}
+.rooms li .rc{font-weight:700;letter-spacing:.14em}
+.rooms li .rg{font-size:15px;color:var(--dim)}
+.rooms li .rn{margin-left:auto;font-size:15px;font-weight:700}
+.rooms li .live{color:var(--orange)}
+
+/* ── 스케치퀴즈 ── */
+.qbar{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.qbar .big{letter-spacing:.12em}
+.board{display:flex;flex-wrap:wrap;gap:6px}
+.board .p{display:flex;align-items:center;gap:5px;font-size:15px;font-weight:700;padding:2px 10px;border-radius:999px;
+  background:#fff;border:3px solid var(--ink);box-shadow:2px 2px 0 var(--ink)}
+.board .p.ok{background:var(--green)}
+.board .p.now{background:var(--yellow)}
+.board .p.off{opacity:.45}
+.board .p i{font-style:normal;color:var(--orange)}
+.chat{height:190px;overflow:auto;background:#fffdf8;border:3px solid var(--ink);border-radius:14px;padding:8px 11px;
+  box-shadow:3px 3px 0 var(--ink);font-size:16px;display:flex;flex-direction:column;gap:3px}
+.chat p{margin:0;word-break:break-all}
+.chat p b{color:var(--dim);font-weight:700}
+.chat p.ok{color:#2b8a3e;font-weight:700}
+.chat p.ok b{color:#2b8a3e}
+.chat p.near{color:var(--orange)}
+.chat p.sys{color:var(--dim)}
+.chat p.in b,.chat p.in{color:#1971c2}
+.chatbar{margin-top:0;flex-wrap:nowrap}
+.chatbar input[type=text]{flex:1 1 60px;width:auto;min-width:0;font-size:17px;padding:8px 11px}
+.chatbar .btn{flex:0 0 auto}
+#sQuiz .side{gap:9px}
+@media (min-width:760px){ .chat{height:calc(100vh - 470px);min-height:150px} }
+
 .rules{font-size:16px;color:var(--dim);padding-left:20px;margin:8px 0 0}
 .title .disclaimer{font-size:12.5px;color:#8f8068;line-height:1.65;margin:26px auto 0;max-width:560px;text-align:center}
 .title .disclaimer a{color:inherit}
@@ -445,6 +491,7 @@ summary{cursor:pointer;font-size:17px;font-weight:700;color:var(--dim)}
       <span class="chip code num hide" id="rc"></span>
       <span class="chip hide" id="step"></span>
       <span class="clock num hide" id="clock">0</span>
+      <button class="btn sm hide" id="bLeave">나가기</button>
     </div>
     <div class="prog hide" id="prog" aria-hidden="true"></div>
   </header>
@@ -482,10 +529,23 @@ summary{cursor:pointer;font-size:17px;font-weight:700;color:var(--dim)}
     <label for="nm">이름</label>
     <input type="text" id="nm" maxlength="12" placeholder="뭐라고 부를까요" autocomplete="nickname">
     <div class="row"><button class="btn go big" id="bNew">방 만들기</button></div>
+    <!-- 방을 만들 때 게임을 고른다 -->
+    <div class="hide" id="makeBox">
+      <label>어떤 게임으로</label>
+      <div class="games" id="gameRow">
+        <button data-v="tele" class="on"><b>텔레스트레이션</b><span>공책을 돌려 가며 그리고 맞힌다 · 4~10명</span></button>
+        <button data-v="quiz"><b>스케치퀴즈</b><span>한 사람이 그리고 나머지가 맞힌다 · 2~10명</span></button>
+      </div>
+      <label class="check"><input type="checkbox" id="mkPriv"> 비공개 — 열린 방 목록에 안 뜸</label>
+      <div class="row"><button class="btn go big" id="bMake">만들기</button></div>
+    </div>
     <div class="or">— 또는 —</div>
     <label for="cd">방 번호</label>
     <input type="text" id="cd" class="code" maxlength="4" placeholder="ABCD" autocapitalize="characters" autocomplete="off" spellcheck="false">
     <div class="row"><button class="btn" id="bJoin">들어가기</button></div>
+    <label>열린 방</label>
+    <ul class="rooms" id="roomList"></ul>
+    <p class="note" id="roomsNote">열린 방을 찾는 중…</p>
   </section>
 
   <!-- 대기실 -->
@@ -511,6 +571,14 @@ summary{cursor:pointer;font-size:17px;font-weight:700;color:var(--dim)}
         <button data-v="30">30초</button>
         <button data-v="60">60초</button>
         <button data-v="90">90초</button>
+      </div>
+      <div class="hide" id="lapBox">
+        <label>몇 바퀴 — 한 바퀴는 모두가 한 번씩 그리는 것</label>
+        <div class="pickrow" id="lapRow">
+          <button data-v="1">1바퀴</button>
+          <button data-v="2">2바퀴</button>
+          <button data-v="3">3바퀴</button>
+        </div>
       </div>
     </div>
     <p class="note" id="setupNote"></p>
@@ -588,6 +656,41 @@ summary{cursor:pointer;font-size:17px;font-weight:700;color:var(--dim)}
     <p class="note" id="albNote"></p>
   </section>
 
+  <!-- 스케치퀴즈: 제시어 고르기 -->
+  <section class="card hide" id="sQPick">
+    <p class="lede" id="qPickLede"></p>
+    <div class="six" id="qSix"></div>
+    <div class="who" id="qPickWho"></div>
+  </section>
+
+  <!-- 스케치퀴즈: 그리기와 맞히기 -->
+  <section class="card hide" id="sQuiz">
+    <div class="prev"><div class="cap" id="qCap"></div><div class="big" id="qWord"></div></div>
+    <div class="sheet"><div class="rings"></div><div class="pad"><canvas id="qpad"></canvas></div></div>
+    <div class="side">
+      <div class="tray hide" id="qTray"><div class="pens" id="qPens"></div></div>
+      <div class="row tools2 hide" id="qTools">
+        <div class="nibs" id="qNibs"></div>
+        <button class="btn sm" id="qUndo">되돌리기</button>
+        <button class="btn sm" id="qClear">전부 지우기</button>
+      </div>
+      <div class="board" id="qBoard"></div>
+      <div class="chat" id="qChat"></div>
+      <form class="row chatbar" id="qForm">
+        <input type="text" id="qSay" maxlength="30" placeholder="뭘까요?" autocomplete="off">
+        <button class="btn sm" type="submit">보내기</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- 스케치퀴즈: 끝 -->
+  <section class="card hide" id="sQDone">
+    <p class="crown" id="qTop"></p>
+    <div class="board" id="qFinal"></div>
+    <div class="row"><button class="btn go big" id="bQAgain">한 판 더</button></div>
+    <p class="note" id="qDoneNote"></p>
+  </section>
+
   <!-- 끝 -->
   <div class="burst full" id="cheer" aria-hidden="true"></div>
   <section class="card hide" id="sDone">
@@ -598,7 +701,18 @@ summary{cursor:pointer;font-size:17px;font-weight:700;color:var(--dim)}
   </section>
 
   <section class="card" id="rulesCard">
-    <details><summary>규칙</summary>
+    <details id="qRules" class="hide"><summary>스케치퀴즈 규칙</summary>
+      <ul class="rules">
+        <li>2~10명. 차례마다 한 사람이 그리고 나머지가 채팅으로 맞힙니다.</li>
+        <li>그리는 사람은 제시어 석 장 중 하나를 고릅니다. 시간이 다 가면 첫 장으로 정해집니다.</li>
+        <li>맞히는 사람에게는 <b>글자 수</b>만 보이고, 시간이 흐르면 글자가 한두 자씩 열립니다.</li>
+        <li>빨리 맞힐수록 점수가 큽니다. 그린 사람은 <b>한 사람이 맞힐 때마다</b> 점수를 받습니다.</li>
+        <li>맞힌 사람끼리 하는 말은 아직 맞히는 중인 사람에게 보이지 않습니다.</li>
+        <li>모두 맞히거나 시간이 다 가면 다음 사람 차례입니다.</li>
+        <li>모두가 한 번씩 그리면 한 바퀴. 정해진 바퀴를 다 돌면 점수가 제일 높은 사람이 1등입니다.</li>
+      </ul>
+    </details>
+    <details id="tRules"><summary>규칙</summary>
       <ul class="rules">
         <li>4~10명. 사람 수만큼 공책이 돌아갑니다.</li>
         <li>첫 장에 고른 제시어를 적습니다. <b>짝수 인원이면 그 말을 자기가 그림까지 그린 뒤</b> 넘기고, 홀수 인원이면 적기만 하고 넘깁니다.</li>
@@ -684,11 +798,18 @@ function paint(cv, strokes){
   g.drawImage(inkLayer, 0, 0);
 }
 
-var pad = { cv:$('#pad'), strokes:[], cur:null, pen:0, nib:1 };
-function padSize(){ paint(pad.cv, pad.strokes); rings(); }
+/* 그림판 둘 — 텔레스트레이션 것과 스케치퀴즈 것. 속은 같고, 퀴즈 쪽은 획을 그을 때마다 서버로 보낸다 */
+function newPad(cv){ return { cv:cv, strokes:[], cur:null, pen:0, nib:1, ro:false, live:null, seq:0, sent:0, tick:false }; }
+var pad = newPad($('#pad')), qpad = newPad($('#qpad'));
 /* 그리는 중에는 프레임당 한 번만 — pointermove 는 한 프레임에 여러 번 온다 */
-var padTick = false;
-function padSoon(){ if (padTick) return; padTick = true; requestAnimationFrame(function(){ padTick = false; paint(pad.cv, pad.strokes); }); }
+function repaint(p){
+  if (p.tick) return;
+  p.tick = true;
+  requestAnimationFrame(function(){ p.tick = false; paint(p.cv, p.live ? p.strokes.concat([p.live]) : p.strokes); });
+}
+function padSize(){ paint(pad.cv, pad.strokes); rings(); }
+function qSize(){ paint(qpad.cv, qpad.live ? qpad.strokes.concat([qpad.live]) : qpad.strokes); rings(); }
+function padSoon(){ repaint(pad); }
 
 /** 스프링 고리 — 종이 폭을 재서 고른 간격으로 심는다. 그래야 끝에서 잘리거나 엇갈리지 않는다 */
 function rings(){
@@ -707,39 +828,50 @@ function rings(){
   });
 }
 
-function padXY(e){
-  var r = pad.cv.getBoundingClientRect();
+function padXY(p, e){
+  var r = p.cv.getBoundingClientRect();
   var x = (e.clientX - r.left) / r.width * 1024;
   var y = (e.clientY - r.top) / r.height * 1024;
   return [Math.max(0, Math.min(1023, Math.round(x))), Math.max(0, Math.min(1023, Math.round(y)))];
 }
 
-pad.cv.addEventListener('pointerdown', function(e){
-  if (e.button !== 0 && e.pointerType === 'mouse') return;
-  pad.cv.setPointerCapture(e.pointerId);
-  var xy = padXY(e);
-  pad.cur = { c:pad.pen, w:pad.nib, p:[xy[0], xy[1]] };
-  pad.strokes.push(pad.cur);
-  padSoon();
-});
-pad.cv.addEventListener('pointermove', function(e){
-  if (!pad.cur) return;
-  /* 한 번에 몰아서 온 점들을 펴 본다 — 빠르게 그으면 여기서 중간 점이 나온다.
-     빈 배열을 돌려주는 곳도 있어서, 그때는 이 이벤트 하나만 쓴다. 안 그러면 선이 끊긴다 */
-  var evs = (e.getCoalescedEvents && e.getCoalescedEvents()) || [];
-  if (!evs.length) evs = [e];
-  for (var i = 0; i < evs.length; i++) {
-    var xy = padXY(evs[i]);
-    var p = pad.cur.p, n = p.length;
-    if (n >= 2 && Math.abs(p[n-2] - xy[0]) + Math.abs(p[n-1] - xy[1]) < 3) continue;  // 잔떨림은 버린다
-    if (p.length < 1200) p.push(xy[0], xy[1]);
+/** 손을 받는다. 보기만 하는 판(ro)에서는 아무 일도 안 일어난다 */
+function bindPad(p){
+  p.cv.addEventListener('pointerdown', function(e){
+    if (p.ro) return;
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    p.cv.setPointerCapture(e.pointerId);
+    var xy = padXY(p, e);
+    p.seq += 1; p.sent = 0;
+    p.cur = { c:p.pen, w:p.nib, p:[xy[0], xy[1]] };
+    p.strokes.push(p.cur);
+    repaint(p);
+  });
+  p.cv.addEventListener('pointermove', function(e){
+    if (!p.cur) return;
+    /* 한 번에 몰아서 온 점들을 펴 본다 — 빠르게 그으면 여기서 중간 점이 나온다.
+       빈 배열을 돌려주는 곳도 있어서, 그때는 이 이벤트 하나만 쓴다. 안 그러면 선이 끊긴다 */
+    var evs = (e.getCoalescedEvents && e.getCoalescedEvents()) || [];
+    if (!evs.length) evs = [e];
+    for (var i = 0; i < evs.length; i++) {
+      var xy = padXY(p, evs[i]);
+      var q = p.cur.p, n = q.length;
+      if (n >= 2 && Math.abs(q[n-2] - xy[0]) + Math.abs(q[n-1] - xy[1]) < 3) continue;  // 잔떨림은 버린다
+      if (q.length < 1200) q.push(xy[0], xy[1]);
+    }
+    repaint(p);
+    if (p.onLive) p.onLive(p);
+  });
+  function up(){
+    if (!p.cur) return;
+    var st = p.cur; p.cur = null;
+    if (p.onEnd) p.onEnd(st);
   }
-  padSoon();
-});
-function padUp(){ pad.cur = null; }
-pad.cv.addEventListener('pointerup', padUp);
-pad.cv.addEventListener('pointercancel', padUp);
-pad.cv.addEventListener('pointerleave', padUp);
+  p.cv.addEventListener('pointerup', up);
+  p.cv.addEventListener('pointercancel', up);
+  p.cv.addEventListener('pointerleave', up);
+}
+bindPad(pad); bindPad(qpad);
 
 $('#bUndo').onclick = function(){ pad.strokes.pop(); padSize(); };
 $('#bClear').onclick = function(){ pad.strokes = []; padSize(); };
@@ -766,25 +898,42 @@ function eraser(){
     + '</svg>';
 }
 
-(function buildTools(){
+/** 크레용 통과 굵기 단추를 한 벌 만들어 그림판에 잇는다 */
+function buildTools(pensEl, nibsEl, p){
   var ph = '';
   for (var i = 0; i < PENS.length; i++) ph += '<button data-p="' + i + '" aria-label="색 ' + (i+1) + '">' + crayon(PENS[i]) + '</button>';
   ph += '<button class="eraser" data-p="' + ERASER + '" aria-label="지우개" title="지우개">' + eraser() + '</button>';
-  $('#pens').innerHTML = ph;
+  pensEl.innerHTML = ph;
   var nh = '';
   for (var j = 0; j < NIBS.length; j++) nh += '<button data-n="' + j + '" aria-label="굵기 ' + (j+1) + '"><i style="width:' + (4 + j*5) + 'px;height:' + (4 + j*5) + 'px"></i></button>';
-  $('#nibs').innerHTML = nh;
+  nibsEl.innerHTML = nh;
   function mark(){
-    $('#pens').querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', +b.dataset.p === pad.pen); });
-    $('#nibs').querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', +b.dataset.n === pad.nib); });
+    pensEl.querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', +b.dataset.p === p.pen); });
+    nibsEl.querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', +b.dataset.n === p.nib); });
   }
-  $('#pens').onclick = function(e){ var b = e.target.closest('button'); if (b) { pad.pen = +b.dataset.p; mark(); } };
-  $('#nibs').onclick = function(e){ var b = e.target.closest('button'); if (b) { pad.nib = +b.dataset.n; mark(); } };
+  pensEl.onclick = function(e){ var b = e.target.closest('button'); if (b) { p.pen = +b.dataset.p; mark(); } };
+  nibsEl.onclick = function(e){ var b = e.target.closest('button'); if (b) { p.nib = +b.dataset.n; mark(); } };
   mark();
-})();
+}
+buildTools($('#pens'), $('#nibs'), pad);
+buildTools($('#qPens'), $('#qNibs'), qpad);
+
+/* 스케치퀴즈 — 붓이 종이에 닿아 있는 동안에는 새로 늘어난 점만 흘려보내고, 떼면 획 하나를 보낸다 */
+qpad.onLive = function(p){
+  var now = Date.now();
+  if (!p.cur || now - (p.liveAt || 0) < 120) return;
+  var pts = p.cur.p.slice(p.sent);
+  if (!pts.length) return;
+  p.liveAt = now; p.sent = p.cur.p.length;
+  send({ t:'live', p:pts, c:p.cur.c, w:p.cur.w, seq:p.seq });
+};
+qpad.onEnd = function(st){ send({ t:'ink', s:st }); };
+$('#qUndo').onclick = function(){ if (qpad.ro) return; qpad.strokes.pop(); qSize(); send({ t:'undo' }); };
+$('#qClear').onclick = function(){ if (qpad.ro) return; qpad.strokes = []; qpad.live = null; qSize(); send({ t:'clear' }); };
 
 window.addEventListener('resize', function(){
   padSize();
+  if (!$('#sQuiz').classList.contains('hide')) qSize();
   var r = S.room;
   if (r && r.phase === 'play' && r.kind === 'word' && r.prev) { paint($('#guessShot'), r.prev.strokes); rings(); }
   if (r && (r.phase === 'reveal' || r.phase === 'vote' || r.phase === 'done')) { S.stageFor = null; S.albFor = null; draw(); }   // 크기가 바뀌었으니 그림도 다시
@@ -795,7 +944,8 @@ function connect(){
   if (S.sock) { try { S.sock.close(); } catch (e) {} }
   var proto = location.protocol === 'https:' ? 'wss' : 'ws';
   var u = proto + '://' + location.host + '/room?code=' + encodeURIComponent(S.code)
-        + '&pid=' + encodeURIComponent(S.pid) + '&name=' + encodeURIComponent(S.name);
+        + '&pid=' + encodeURIComponent(S.pid) + '&name=' + encodeURIComponent(S.name)
+        + (S.make ? '&game=' + S.make.game + (S.make.priv ? '&priv=1' : '') : '');   // 방을 여는 사람만 게임을 정한다
   var ws = new WebSocket(u);
   S.sock = ws;
   ws.onmessage = function(ev){
@@ -809,6 +959,18 @@ function connect(){
       if (S.albumBuf.books.filter(Boolean).length >= m.of) { S.album = S.albumBuf; S.albFor = null; draw(); }
       return;
     }
+    /* 스케치퀴즈 — 획과 말은 판과 따로 온다 */
+    if (m.t === 'ink0') { qpad.strokes = (m.s || []).slice(); qpad.live = null; qSize(); return; }
+    if (m.t === 'ink') { qpad.strokes.push(m.s); qpad.live = null; repaint(qpad); return; }
+    if (m.t === 'live') {
+      if (!qpad.live || qpad.live.seq !== m.seq) qpad.live = { c:m.c, w:m.w, p:[], seq:m.seq };
+      for (var li = 0; li + 1 < m.p.length; li += 2) qpad.live.p.push(m.p[li], m.p[li + 1]);
+      repaint(qpad); return;
+    }
+    if (m.t === 'clear') { qpad.strokes = []; qpad.live = null; repaint(qpad); return; }
+    if (m.t === 'undo') { qpad.strokes.pop(); repaint(qpad); return; }
+    if (m.t === 'chat') { addChat(m); return; }
+    if (m.t === 'left') { leaveDone(); return; }
     if (m.t !== 'room') return;
     var was = S.room;
     /* 판 수 세기 — 방장 화면에서만. 사람마다 보내면 한 판이 인원수만큼 세어진다. */
@@ -841,7 +1003,7 @@ function saveName(){
 }
 $('#nm').value = S.name;
 
-$('#bPlay').onclick = function(){ S.entered = true; draw(); $('#nm').focus(); };
+$('#bPlay').onclick = function(){ S.entered = true; draw(); pollRooms(); $('#nm').focus(); };
 
 /* 타이틀이 열릴 때 딱 한 번. 제목 양끝에서 폭죽처럼 — 조각마다 크기·모양·궤적·박자가 다르다 */
 /**
@@ -885,12 +1047,68 @@ $('#bRules').onclick = function(){
   d.scrollIntoView({ behavior:'smooth', block:'start' });
 };
 
+var GAMEKO = { tele:'텔레스트레이션', quiz:'스케치퀴즈' };
+var mk = { game:'tele', priv:false };
+
 $('#bNew').onclick = function(){
-  saveName();
-  $('#bNew').disabled = true;
-  fetch('/new').then(function(r){ return r.json(); }).then(function(d){ enter(d.code); })
-    .catch(function(){ toast('방을 못 만들었습니다'); $('#bNew').disabled = false; });
+  var box = $('#makeBox'), open = box.classList.toggle('hide') === false;
+  $('#bNew').classList.toggle('go', !open);        // 펼치면 초록은 아래 「만들기」 하나만
+  if (open) box.scrollIntoView({ behavior:'smooth', block:'nearest' });
 };
+$('#gameRow').onclick = function(e){
+  var b = e.target.closest('button'); if (!b) return;
+  mk.game = b.dataset.v;
+  $('#gameRow').querySelectorAll('button').forEach(function(x){ x.classList.toggle('on', x === b); });
+};
+$('#bMake').onclick = function(){
+  saveName();
+  mk.priv = $('#mkPriv').checked;
+  $('#bMake').disabled = true;
+  fetch('/new').then(function(r){ return r.json(); }).then(function(d){ enter(d.code, mk); })
+    .catch(function(){ toast('방을 못 만들었습니다'); $('#bMake').disabled = false; });
+};
+
+/* 열린 방 — 문간에 있는 동안 몇 초마다 한 번씩 물어본다 */
+function pollRooms(){
+  if (S.code || !S.entered) return;
+  fetch('/rooms').then(function(r){ return r.json(); }).then(function(d){
+    if (S.code) return;
+    var list = d.rooms || [];
+    $('#roomList').innerHTML = list.map(function(x){
+      return '<li data-code="' + esc(x.code) + '"><span class="rc num">' + esc(x.code) + '</span>'
+        + '<span class="rg">' + esc(GAMEKO[x.game] || x.game) + '</span>'
+        + '<span class="rg' + (x.phase === 'lobby' ? '' : ' live') + '">' + (x.phase === 'lobby' ? '기다리는 중' : '판이 도는 중') + '</span>'
+        + '<span class="rn num">' + x.n + ' / ' + x.max + '명</span></li>';
+    }).join('');
+    $('#roomsNote').textContent = list.length ? '' : '열린 방이 없음. 하나 만들어 보세요';
+  }).catch(function(){ $('#roomsNote').textContent = '열린 방을 못 불러왔습니다'; });
+}
+$('#roomList').onclick = function(e){
+  var li = e.target.closest('li[data-code]'); if (!li) return;
+  saveName();
+  enter(li.dataset.code, null);
+};
+setInterval(pollRooms, 5000);
+
+/* 나가기 — 대기실이면 자리를 비우고, 스케치퀴즈는 판 도중에도 비운다 */
+$('#bLeave').onclick = function(){
+  if (!S.code) return;
+  if (!send({ t:'leave' })) leaveDone();
+  setTimeout(function(){ if (S.code) leaveDone(); }, 700);
+};
+function leaveDone(){
+  var sock = S.sock;
+  S.sock = null; S.code = ''; S.make = null; S.room = null; S.album = null; S.albumBuf = null;
+  S.albumAsk = null; S.chat = []; S.qturn = null; S.qpickFor = null; S.padFor = null; S.stageFor = null;
+  try { sock && sock.close(); } catch (e) {}
+  clearInterval(S.tick);
+  qpad.strokes = []; qpad.live = null;
+  renderChat();
+  history.replaceState(null, '', location.pathname);
+  S.entered = true;
+  draw();
+  pollRooms();
+}
 $('#bJoin').onclick = function(){
   saveName();
   var c = ($('#cd').value || '').trim().toUpperCase();
@@ -900,8 +1118,9 @@ $('#bJoin').onclick = function(){
 $('#cd').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('#bJoin').click(); });
 $('#nm').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('#cd').focus(); });
 
-function enter(code){
+function enter(code, make){
   S.code = code;
+  S.make = make || null;
   location.hash = code;
   $('#rc').textContent = code;
   connect();
@@ -916,6 +1135,16 @@ $('#bCopy').onclick = function(){
 };
 $('#bStart').onclick = function(){ send({ t:'start' }); };
 $('#bAgain').onclick = function(){ send({ t:'again' }); };
+$('#bQAgain').onclick = function(){ send({ t:'again' }); };
+$('#lapRow').onclick = function(e){ var b = e.target.closest('button'); if (b && !b.disabled) send({ t:'set', laps:+b.dataset.v }); };
+$('#qSix').onclick = function(e){ var b = e.target.closest('button'); if (b) { send({ t:'qpick', i:+b.dataset.i }); b.classList.add('on'); } };
+$('#qForm').onsubmit = function(e){
+  e.preventDefault();
+  var w = ($('#qSay').value || '').trim();
+  if (!w) return;
+  send({ t:'say', w:w });
+  $('#qSay').value = '';
+};
 $('#bPeek').onclick = function(){ S.peek = true; draw(); };      // 끝난 뒤 공책첩을 다시 편다
 $('#bWinner').onclick = function(){ S.peek = false; draw(); };
 $('#bNext').onclick = function(){ send({ t:'turn', d:1 }); };
@@ -965,14 +1194,16 @@ $('#bGuessDone').onclick = function(){
 $('#gw').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('#bGuessDone').click(); });
 
 // ══════════════════════════════ 그리기(화면)
-var SECTIONS = ['#sTitle','#sGate','#sLobby','#sPick','#sDraw','#sGuess','#sWait','#sReveal','#sAlbum','#sDone'];
+var SECTIONS = ['#sTitle','#sGate','#sLobby','#sPick','#sDraw','#sGuess','#sWait','#sReveal','#sAlbum','#sDone',
+                '#sQPick','#sQuiz','#sQDone'];
 /** 한 화면만 남긴다. 끝 화면처럼 둘을 같이 띄워야 할 때는 여럿을 넘긴다 */
 function show(){
   var want = [].slice.call(arguments);
   var main = want[0];
   /* 그리기·맞히기·공책은 넓게, 나머지 짧은 화면은 560 으로 모아 세로 가운데에 */
-  document.body.classList.toggle('wide', main === '#sDraw' || main === '#sGuess' || main === '#sReveal' || main === '#sAlbum');
-  document.body.classList.toggle('mid', main === '#sGate' || main === '#sLobby' || main === '#sPick' || main === '#sWait' || main === '#sDone');
+  document.body.classList.toggle('wide', main === '#sDraw' || main === '#sGuess' || main === '#sReveal' || main === '#sAlbum' || main === '#sQuiz');
+  document.body.classList.toggle('mid', main === '#sGate' || main === '#sLobby' || main === '#sPick' || main === '#sWait'
+    || main === '#sDone' || main === '#sQPick' || main === '#sQDone');
   SECTIONS.forEach(function(s){
     var el = $(s), was = !el.classList.contains('hide'), now = want.indexOf(s) >= 0;
     el.classList.toggle('hide', !now);
@@ -993,7 +1224,8 @@ function clock(r){
   var c = $('#clock');
   clearInterval(S.tick);
   c.classList.remove('hide');
-  if (!r.left || (r.phase !== 'pick' && r.phase !== 'play' && r.phase !== 'vote')) { c.classList.add('ghost'); c.classList.remove('hot'); return; }
+  /* 시계가 도는 참들 — 텔레스트레이션과 스케치퀴즈 둘 다 */
+  if (!r.left || ['pick','play','vote','qpick','qplay'].indexOf(r.phase) < 0) { c.classList.add('ghost'); c.classList.remove('hot'); return; }
   var end = Date.now() + r.left * 1000;
   c.classList.remove('ghost');
   var beat = function(){
@@ -1034,30 +1266,45 @@ function draw(){
   $('#step').classList.toggle('hide', !r || r.phase === 'lobby');
   if (!r || r.phase === 'lobby') $('#prog').classList.add('hide');
   $('#step').classList.toggle('ghost', !!r && r.phase === 'lobby'); $('#step').classList.toggle('hide', !r);
-  if (!r) { show(S.entered ? '#sGate' : '#sTitle'); $('#clock').classList.add('hide'); $('#prog').classList.add('hide'); return; }
+  $('#bLeave').classList.toggle('hide', !r);
+  if (!r) {
+    $('#qRules').classList.remove('hide'); $('#tRules').classList.remove('hide');
+    show(S.entered ? '#sGate' : '#sTitle'); $('#clock').classList.add('hide'); $('#prog').classList.add('hide'); return;
+  }
   $('#rc').textContent = r.code;
   clock(r);
 
   var isHost = r.me === r.host;
   var n = r.players.length;
+  var quiz = r.game === 'quiz';
+  $('#qRules').classList.toggle('hide', !quiz);       // 방에 들어오면 그 게임 규칙만
+  $('#tRules').classList.toggle('hide', quiz);
 
   if (r.phase === 'lobby') {
     S.peek = false; S.albSel = null;
     S.pickFor = S.padFor = S.stageFor = S.guessFor = null;   // 지난 판 표식은 지운다 — 안 그러면 카드·그림판·무대가 그대로 남는다
     show('#sLobby');
     $('#lobbyCode').textContent = r.code;
+    $('#lobbyLede').textContent = (GAMEKO[r.game] || '') + ' · ' + r.min + '~' + r.max + '명'
+      + (r.priv ? ' · 비공개' : '');
     var ghosts = '';
-    for (var gi = n; gi < 4; gi++) ghosts += '<span class="p ghost"><i class="dot"></i>빈 자리</span>';   // 넷이 될 때까지 빈칸을 보여 준다
+    for (var gi = n; gi < r.min; gi++) ghosts += '<span class="p ghost"><i class="dot"></i>빈 자리</span>';   // 시작할 수 있을 때까지 빈칸을 보여 준다
     $('#whoLobby').innerHTML = whoHtml(r, false) + ghosts;
     $('#lvRow').querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', b.dataset.v === r.level); b.disabled = !isHost; });
     $('#secRow').querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', +b.dataset.v === r.secs); b.disabled = !isHost; });
+    $('#lapBox').classList.toggle('hide', !quiz);
+    $('#lapRow').querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', +b.dataset.v === r.laps); b.disabled = !isHost; });
 /* 이건 남긴다 — 다음에 무엇을 하게 되는지가 인원수에 따라 달라진다 */
-    $('#setupNote').textContent = n % 2 === 0 ? '짝수 — 고른 말은 내가 그립니다' : '홀수 — 고른 말은 옆 사람이 그립니다';
+    $('#setupNote').textContent = quiz
+      ? '차례마다 한 사람이 그리고 나머지가 맞힙니다'
+      : (n % 2 === 0 ? '짝수 — 고른 말은 내가 그립니다' : '홀수 — 고른 말은 옆 사람이 그립니다');
     $('#bStart').classList.toggle('hide', !isHost);
-    $('#bStart').disabled = n < 4;
+    $('#bStart').disabled = n < r.min;
     $('#lobbyNote').textContent = '';
     return;
   }
+
+  if (quiz) { drawQuiz(r, isHost); return; }
 
   $('#step').textContent = r.round + ' / ' + r.rounds + '라운드';
   var prog = '';
@@ -1188,6 +1435,106 @@ function draw(){
     $('#doneNote').textContent = '';
     return;
   }
+}
+
+/* ══════════════ 스케치퀴즈 화면 ══════════════ */
+
+/** 점수판 한 줄씩 — 그리는 사람은 연필, 맞힌 사람은 체크 */
+function boardHtml(r){
+  var q = r.q || {}, by = {};
+  r.players.forEach(function(p){ by[p.pid] = p; });
+  return (q.scores || []).slice().sort(function(a, b){ return b.score - a.score; }).map(function(x){
+    var p = by[x.pid];
+    if (!p) return '';
+    var solved = (q.solved || []).indexOf(x.pid) >= 0, drawing = x.pid === q.drawer;
+    return '<span class="p' + (p.on ? '' : ' off') + (solved ? ' ok' : '') + (drawing ? ' now' : '') + '">'
+      + (drawing ? '✏️ ' : solved ? '✓ ' : '') + esc(p.name) + ' ' + x.score
+      + (q.gains && q.gains[x.pid] ? ' <i>+' + q.gains[x.pid] + '</i>' : '') + '</span>';
+  }).join('');
+}
+
+function addChat(m){
+  S.chat = (S.chat || []).concat([{ name:m.name, text:m.text, kind:m.kind }]).slice(-60);
+  renderChat();
+}
+function renderChat(){
+  var box = $('#qChat');
+  if (!box) return;
+  box.innerHTML = (S.chat || []).map(function(c){
+    return '<p class="' + (c.kind || '') + '">' + (c.name ? '<b>' + esc(c.name) + '</b> ' : '') + esc(c.text) + '</p>';
+  }).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+function drawQuiz(r, isHost){
+  var q = r.q || {};
+  $('#step').textContent = (q.turn || 0) + ' / ' + (q.turns || 0) + '차례';
+  $('#step').classList.remove('ghost');
+  $('#prog').classList.add('hide');
+
+  if (r.phase === 'done') {
+    show('#sQDone');
+    var rows = (q.scores || []).slice().sort(function(a, b){ return b.score - a.score; });
+    var best = rows.length ? rows[0].score : 0;
+    var by = {};
+    r.players.forEach(function(p){ by[p.pid] = p; });
+    var top = rows.filter(function(x){ return x.score === best && best > 0; })
+      .map(function(x){ return by[x.pid] ? esc(by[x.pid].name) : ''; }).filter(Boolean);
+    $('#qTop').innerHTML = top.length
+      ? '<b>' + top.join(' · ') + '</b>님 1등 · ' + best + '점'
+      : '점수를 낸 사람이 없습니다';
+    $('#qFinal').innerHTML = boardHtml(r);
+    $('#bQAgain').classList.toggle('hide', !isHost);
+    $('#qDoneNote').textContent = isHost ? '' : '방장이 다시 시작합니다';
+    if (top.length && S.cheerFor !== 'q:' + r.code + ':' + q.turns) { S.cheerFor = 'q:' + r.code + ':' + q.turns; setTimeout(cheer, 150); }
+    return;
+  }
+
+  if (r.phase === 'qpick') {
+    show('#sQPick');
+    var key = r.code + ':' + q.turn;
+    if (q.mine) {
+      $('#qPickLede').textContent = '무엇을 그릴까요';
+      if (S.qpickFor !== key) {
+        S.qpickFor = key;
+        $('#qSix').innerHTML = (q.choices || []).map(function(w, i){ return '<button data-i="' + i + '">' + esc(w) + '</button>'; }).join('');
+      }
+    } else {
+      S.qpickFor = null;
+      $('#qSix').innerHTML = '';
+      $('#qPickLede').innerHTML = '<b>' + esc(q.drawerName) + '</b>님이 고르는 중…';
+    }
+    $('#qPickWho').innerHTML = boardHtml(r);
+    return;
+  }
+
+  show('#sQuiz');
+  var drawing = q.mine && r.phase === 'qplay';
+  qpad.ro = !drawing;
+  $('#qTray').classList.toggle('hide', !drawing);
+  $('#qTools').classList.toggle('hide', !drawing);
+  var tk = r.code + ':' + q.turn;
+  /* 차례가 바뀌면 종이를 갈아 끼운다. 방금 들어온 참이면 서버가 보내 준 그림을 그대로 둔다 */
+  if (S.qturn && S.qturn !== tk) { qpad.strokes = []; qpad.live = null; }
+  S.qturn = tk;
+  requestAnimationFrame(qSize);
+
+  if (r.phase === 'qend') {
+    $('#qCap').textContent = q.why || '차례 끝';
+    $('#qWord').textContent = q.word;
+  } else if (q.mine) {
+    $('#qCap').textContent = '이 말을 그리세요';
+    $('#qWord').textContent = q.word;
+  } else {
+    $('#qCap').textContent = q.iSolved ? '맞혔습니다! 다른 사람을 기다립니다' : q.drawerName + '님이 그리는 중';
+    $('#qWord').textContent = q.hint;
+  }
+  $('#qBoard').innerHTML = boardHtml(r);
+  var can = r.seat >= 0 && r.phase === 'qplay';
+  $('#qSay').disabled = !can;
+  $('#qSay').placeholder = !can ? '구경 중입니다'
+    : q.mine ? '그림으로만 알려 주세요' : q.iSolved ? '맞힌 사람끼리 하는 말' : '뭘까요?';
+  if (can && !q.mine && !q.iSolved && S.focusFor !== tk) { S.focusFor = tk; $('#qSay').focus(); }
 }
 
 /**
