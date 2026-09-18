@@ -578,6 +578,43 @@ input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-wei
 .chatbar{margin-top:0;flex-wrap:nowrap}
 .chatbar input[type=text]{flex:1 1 60px;width:auto;min-width:0;font-size:17px;padding:8px 11px}
 .chatbar .btn{flex:0 0 auto}
+/* 채팅이 화면 밖에 있을 때 온 말 — 오른쪽 아래 단추의 빨간 숫자와 말풍선. 누르면 채팅으로 간다 */
+.chat-btn{
+  position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:8;
+  width:50px;height:50px;padding:0;display:grid;place-items:center;cursor:pointer;
+  border:3px solid var(--ink);border-radius:16px;background:var(--surface);color:var(--ink);
+  box-shadow:2px 2px 0 var(--shadow);transition:transform .05s,box-shadow .05s;
+}
+.chat-btn>svg{display:block;width:24px;height:24px}
+.chat-btn:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--shadow)}
+.chat-btn[hidden],.chat-peek[hidden]{display:none}
+.chat-n{
+  position:absolute;top:-9px;right:-9px;
+  min-width:22px;height:22px;border-radius:999px;padding:0 5px;
+  font-size:13px;line-height:17px;font-weight:700;text-align:center;
+  background:var(--red);color:var(--sheet);border:2px solid var(--ink);
+}
+.chat-n.pop{animation:chatPop .5s cubic-bezier(.3,1.7,.5,1)}
+@keyframes chatPop{from{transform:scale(.3)}}
+.chat-peek{
+  position:fixed;right:78px;bottom:calc(20px + env(safe-area-inset-bottom));z-index:8;
+  max-width:min(280px,calc(100vw - 100px));
+  padding:7px 12px;border-radius:14px 14px 4px 14px;
+  background:var(--field);color:var(--ink);border:3px solid var(--ink);box-shadow:3px 3px 0 var(--shadow);
+  font-size:16px;line-height:1.4;cursor:pointer;word-break:break-all;
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;
+  animation:chatPeekIn .2s ease-out;transition:opacity .25s,transform .25s;
+}
+.chat-peek b{color:var(--dim);font-weight:700;margin-right:6px}
+.chat-peek.bye{opacity:0;transform:translateX(6px)}
+@keyframes chatPeekIn{from{opacity:0;transform:translateX(8px)}}
+/* 폰에서는 아래에 두면 적는 칸·내는 단추 위를 덮고, 자판이 올라오면 같이 가려진다. 화면 위쪽에 띄운다 */
+@media (max-width:560px){
+  .chat-peek{top:calc(10px + env(safe-area-inset-top));bottom:auto;left:12px;right:12px;max-width:none;border-radius:14px;animation-name:chatPeekDown}
+  .chat-peek.bye{transform:translateY(-6px)}
+}
+@keyframes chatPeekDown{from{opacity:0;transform:translateY(-8px)}}
+@media (prefers-reduced-motion:reduce){.chat-peek,.chat-n.pop{animation:none;transition:none}}
 #sQuiz .side{gap:9px}
 #sQuiz .chat{height:190px}
 @media (min-width:760px){ #sQuiz .chat{height:calc(100vh - 470px);min-height:150px} }
@@ -853,7 +890,12 @@ summary{cursor:pointer;font-size:17px;font-weight:700;color:var(--dim)}
   </section>
 </div>
 
+<!-- 채팅이 화면 밖에 있을 때만 뜬다 — 안 읽은 말 수와, 방금 온 말 한 줄. 누르면 채팅으로 간다 -->
+<button class="chat-btn" id="chatBtn" type="button" hidden aria-label="채팅으로"><svg aria-hidden="true"><use href="#i-chat"/></svg><span class="chat-n" id="chatN"></span></button>
+<div class="chat-peek" id="chatPeek" hidden role="status" aria-live="polite"></div>
+
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5.5h16v10H10l-4.5 4v-4H4Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></symbol>
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></symbol>
   <symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></g></symbol>
 </svg>
@@ -874,6 +916,9 @@ var ERASER = 15;
 
 var S = { room:null, pid:null, name:'', code:'', sock:null, tick:null, sent:false, padFor:null, chainSig:null,
           entered:false };   // 타이틀을 지나 방 만드는 화면까지 왔는지
+/* 채팅 알림 — 안 읽은 말 수(단추), 탭이 뒤에 있는 동안 온 말 수(탭 제목), 말풍선 타이머. 아래 addChat 곁에서 쓴다 */
+S.chatUnread = 0; S.chatAway = 0; S.chatPeekT = 0;
+var chatTitle0 = document.title;
 
 try {
   S.pid = localStorage.getItem('tel.pid');
@@ -1265,6 +1310,7 @@ function leaveDone(){
   clearInterval(S.tick);
   qpad.strokes = []; qpad.live = null;
   renderChat();
+  chatReset();
   history.replaceState(null, '', location.pathname);
   S.entered = true;
   $('#bMake').disabled = false;          // 방을 만들 때 잠갔던 단추 — 다시 만들 수 있게 푼다
@@ -1281,6 +1327,7 @@ $('#cd').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('#bJo
 $('#nm').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('#cd').focus(); });
 
 function enter(code, make){
+  chatReset();
   S.code = code;
   S.make = make || null;
   location.hash = code;
@@ -1372,6 +1419,7 @@ function show(){
     el.classList.toggle('hide', !now);
     if (now && !was) { el.classList.remove('in'); void el.offsetWidth; el.classList.add('in'); }   // 새로 뜨는 판만
   });
+  chatLook();
 }
 
 /** 채팅을 지금 화면 아래(옆 판이 있으면 옆 판)로 옮긴다. 방 밖에서는 숨긴다 */
@@ -1641,7 +1689,98 @@ function boardHtml(r, plain){
 function addChat(m){
   S.chat = (S.chat || []).concat([{ name:m.name, text:m.text, kind:m.kind }]).slice(-60);
   renderChat();
+  /* 이름 없는 말은 서버가 나한테만 귀띔한 것(아깝다·정답 말하지 말라)이고, 내 이름으로 온 건 내가 친 말이다 */
+  if (!m.name || m.name === myChatName()) return;
+  if (chatHere() && !chatSeen()) {
+    S.chatUnread++; chatBadge();
+    if (!drawingNow()) chatPeek(m.name, m.text);
+  }
+  if (document.hidden || !document.hasFocus()) { S.chatAway++; chatTitle(); }
 }
+
+/* 채팅은 접히지 않고 지금 화면 아래(넓으면 옆 판)에 늘 붙어 있다. 그래도 폰에서는 스케치북·크레용 통 아래로
+   밀려 화면 밖에 있기 일쑤다. 그래서 채팅이 안 보이는 동안 온 남의 말은 세 군데로 알린다 —
+   오른쪽 아래 채팅 단추의 빨간 숫자(늘 때마다 통 튄다), 말풍선(읽을 만큼 떠 있다 사라진다),
+   다른 탭·창에 가 있으면 탭 제목 앞의 (n). 단추는 안 읽은 말이 있을 때만 뜨고, 누르면 채팅으로 간다.
+   채팅이 화면에 들어오면 숫자는 저절로 지운다.
+   그리는 동안에는 말풍선을 띄우지 않고 단추도 거둬 둔다 — 스케치북 위에 뜨면 붓질을 가로챈다.
+   그동안 온 말은 세어 두었다가 다 그리고 나면 단추로 알린다. */
+
+function myChatName(){
+  var r = S.room;
+  if (!r) return null;
+  var me = r.players.filter(function(p){ return p.pid === r.me; })[0];
+  return me ? me.name : null;
+}
+/** 방 안이라 채팅이 어딘가 붙어 있는지 */
+function chatHere(){ return !$('#talk').classList.contains('hide'); }
+/** 지금 붓을 쥐고 있는지 — 텔레스트레이션 그리기 쪽, 스케치퀴즈에서 내 차례 */
+function drawingNow(){
+  var r = S.room;
+  if (!$('#sDraw').classList.contains('hide')) return true;
+  return !$('#sQuiz').classList.contains('hide') && !!r && r.phase === 'qplay' && !!r.q && !!r.q.mine;
+}
+/** 채팅이 눈에 보이는지. 자판에 가린 몫까지 빼려고 visualViewport 로 잰다 */
+function chatSeen(){
+  var b = $('#talk').getBoundingClientRect(), v = window.visualViewport;
+  var top = v ? v.offsetTop : 0, bottom = top + (v ? v.height : innerHeight);
+  return Math.min(b.bottom, bottom) - Math.max(b.top, top) >= Math.min(60, b.height / 2);
+}
+/** 채팅이 화면에 들어왔으면(혹은 방을 나왔으면) 숫자와 말풍선을 거둔다. 그리기가 끝났으면 단추를 다시 낸다 */
+function chatLook(){
+  if (!S.chatUnread && $('#chatPeek').hidden) return;
+  if (chatHere() && !chatSeen()) { chatBadge(true); return; }
+  S.chatUnread = 0; chatBadge(); chatPeekOff();
+}
+addEventListener('scroll', chatLook, { passive:true, capture:true });
+addEventListener('resize', chatLook);
+if (window.visualViewport) visualViewport.addEventListener('resize', chatLook);
+
+function chatReset(){
+  S.chatUnread = 0; chatBadge(); chatPeekOff();
+  S.chatAway = 0; chatTitle();
+}
+/** 채팅으로 간다 */
+function chatGo(){
+  $('#talk').scrollIntoView({ block:'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  S.chatUnread = 0; chatBadge(); chatPeekOff();
+}
+$('#chatBtn').onclick = chatGo;
+$('#chatPeek').onclick = chatGo;
+
+/** quiet 이면 숫자만 맞추고 튀지 않는다(화면이 바뀌어 다시 셀 때) */
+function chatBadge(quiet){
+  var n = $('#chatN'), b = $('#chatBtn'), k = S.chatUnread;
+  n.textContent = k > 99 ? '99+' : k;
+  b.hidden = !k || drawingNow();
+  b.setAttribute('aria-label', '채팅으로 — 안 읽은 말 ' + k + '개');
+  if (!k || quiet) return;
+  n.classList.remove('pop'); void n.offsetWidth; n.classList.add('pop');
+}
+function chatPeek(name, text){
+  var p = $('#chatPeek');
+  p.innerHTML = '<b>' + esc(name) + '</b>' + esc(text);
+  p.classList.remove('bye'); p.hidden = false;
+  p.style.animation = 'none'; void p.offsetWidth; p.style.animation = '';
+  clearTimeout(S.chatPeekT);
+  S.chatPeekT = setTimeout(function(){
+    p.classList.add('bye');
+    S.chatPeekT = setTimeout(chatPeekOff, 260);
+  }, Math.min(6000, Math.max(3000, 1200 + 70 * text.length)));
+}
+function chatPeekOff(){
+  clearTimeout(S.chatPeekT);
+  var p = $('#chatPeek'); p.hidden = true; p.classList.remove('bye');
+}
+function chatTitle(){
+  var k = S.chatAway;
+  document.title = (k ? '(' + (k > 99 ? '99+' : k) + ') ' : '') + chatTitle0;
+}
+function chatBack(){
+  if (S.chatAway && !document.hidden && document.hasFocus()) { S.chatAway = 0; chatTitle(); }
+}
+document.addEventListener('visibilitychange', chatBack);
+addEventListener('focus', chatBack);
 function renderChat(){
   var box = $('#qChat');
   if (!box) return;
