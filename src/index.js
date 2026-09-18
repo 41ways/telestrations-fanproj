@@ -56,7 +56,12 @@ export default {
       return res ? json(await res.json()) : json({ rooms: [], people: 0 });
     }
 
-    if (url.pathname === '/health') return json({ ok: true });
+    /* 지금 열린 방과 붙어 있는 사람 수 — 배포 전에 누가 있는지 본다 (다른 게임 서버와 같은 모양) */
+    if (url.pathname === '/health' || url.pathname === '/healthz') {
+      const res = await lobby(env).fetch('https://l/count').catch(() => null);
+      const c = res ? await res.json() : { rooms: null, sockets: null };
+      return json({ ok: true, rooms: c.rooms, sockets: c.sockets });
+    }
     return new Response('텔레스트레이션', { status: 404 });
   },
 };

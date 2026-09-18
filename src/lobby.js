@@ -36,6 +36,12 @@ export class Lobby extends DurableObject {
       return Response.json({ ok: true });
     }
 
+    /* 상태 확인용 — 비공개 방까지 다 센다. 다른 게임 서버의 /healthz 와 같은 모양으로 */
+    if (url.pathname === '/count') {
+      const all = Object.values(prune(await this.rooms())).filter(r => r.n > 0);
+      return Response.json({ rooms: all.length, sockets: all.reduce((s, r) => s + r.n, 0) });
+    }
+
     /* 목록 — 비공개 방과 꽉 찬 방은 빼고, 기다리는 방을 앞에 */
     const rooms = prune(await this.rooms());
     const list = Object.values(rooms)
