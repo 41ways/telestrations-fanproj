@@ -223,13 +223,13 @@ export class Room extends DurableObject {
       else if (m.t === 'leave') { await this.leave(ws, pid); return; }
       /* 스케치퀴즈 — 획과 말은 오가는 양이 많아서, 판을 저장하고 모두에게 다시 그리는 길로 보내지 않는다.
          텔레스트레이션 방에서는 아예 받지 않는다 — 다른 게임의 말이 섞여 들면 엉뚱한 일이 생긴다 */
+      else if (m.t === 'say') { await this.qSay(ws, pid, m.w); return; }   // 한마디는 두 게임 다, 어느 화면에서나
       else if (!isQuiz) return;
       else if (m.t === 'qpick' && r.phase === 'qpick') await this.qPick(pid, m.i);
       else if (m.t === 'ink') { await this.qInk(pid, m.s); return; }
       else if (m.t === 'live') { this.qLive(pid, m); return; }
       else if (m.t === 'undo') { await this.qEdit(pid, 'undo'); return; }
       else if (m.t === 'clear') { await this.qEdit(pid, 'clear'); return; }
-      else if (m.t === 'say') { await this.qSay(ws, pid, m.w); return; }
       else if (m.t === 'sync') { await this.sendInk(ws); return; }
       else return;
     } catch (e) {
@@ -600,7 +600,7 @@ export class Room extends DurableObject {
     const t = clean(text, MAX_SAY);
     if (!t) return;
     const me = r.players.find(p => p.pid === pid);
-    const name = me ? me.name : '구경꾼';
+    const name = me ? me.name : (this.who(ws).name || '구경꾼');
     const whisper = (kind, txt) => { try { ws.send(JSON.stringify({ t: 'chat', kind, name: '', text: txt })); } catch {} };
     const playing = !!q && r.phase === 'qplay' && !!me && pid !== q.drawer && !q.solved.includes(pid);
     const knows = !!q && r.phase === 'qplay' && (pid === q.drawer || q.solved.includes(pid));

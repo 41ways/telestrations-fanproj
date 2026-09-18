@@ -101,11 +101,12 @@ const run = async () => {
   await sleep(400);
   p.forEach(x => x.say({ t: 'head', s: [{ c: 1, w: 1, p: [10, 10, 900, 900] }] }));
   ok(await till(() => p[0].v.phase === 'play' && p[0].v.round === 2), '넷이 다 내면 다음 라운드');
-  /* 다른 게임의 말이 섞여 들면 안 된다 */
+  /* 채팅은 두 게임 다 되고, 그림 중계 같은 퀴즈 전용 말은 안 먹는다 */
   p[1].say({ t: 'say', w: '여기서 떠들기' });
   p[1].say({ t: 'ink', s: { c: 1, w: 1, p: [1, 1, 900, 900] } });
   await sleep(400);
-  ok(!p[0].chat.length && !p[0].ink, '텔레스트레이션 방에서는 스케치퀴즈 말이 안 먹는다');
+  ok(p[0].chat.some(c => c.text === '여기서 떠들기'), '텔레스트레이션 방에서도 채팅이 된다');
+  ok(!p[0].ink, '텔레스트레이션 방에서는 퀴즈 그림 중계가 안 먹는다');
   p.forEach(x => x.sock.close());
 
   console.log(bad ? bad + '군데 어긋납니다' : '모두 통과');

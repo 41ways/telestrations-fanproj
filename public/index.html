@@ -563,7 +563,10 @@ input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-wei
 .board .p i{font-style:normal;color:var(--accent)}
 .board .p.ok i,.board .p.now i{color:var(--sheet-accent)}
 #qWord{letter-spacing:.14em}
-.chat{height:190px;overflow:auto;background:var(--field);border:3px solid var(--ink);border-radius:14px;padding:8px 11px;
+.talk{display:grid;gap:9px;margin-top:14px;text-align:left}
+.side>.talk{margin-top:0}
+#sReveal>.talk{grid-column:2}
+.chat{height:130px;overflow:auto;background:var(--field);border:3px solid var(--ink);border-radius:14px;padding:8px 11px;
   box-shadow:3px 3px 0 var(--shadow);font-size:16px;display:flex;flex-direction:column;gap:3px}
 .chat p{margin:0;word-break:break-all}
 .chat p b{color:var(--dim);font-weight:700}
@@ -576,7 +579,8 @@ input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-wei
 .chatbar input[type=text]{flex:1 1 60px;width:auto;min-width:0;font-size:17px;padding:8px 11px}
 .chatbar .btn{flex:0 0 auto}
 #sQuiz .side{gap:9px}
-@media (min-width:760px){ .chat{height:calc(100vh - 470px);min-height:150px} }
+#sQuiz .chat{height:190px}
+@media (min-width:760px){ #sQuiz .chat{height:calc(100vh - 470px);min-height:150px} }
 
 /* ── 테마 단추 — 허브의 다른 게임과 같은 꼴. 고른 값은 기억하고, 없으면 기기 설정을 따른다 ── */
 .icon-btn{
@@ -686,9 +690,9 @@ summary{cursor:pointer;font-size:17px;font-weight:700;color:var(--dim)}
       </div>
       <label>그리는 시간</label>
       <div class="pickrow" id="secRow">
-        <button data-v="30">30초</button>
+        <button data-v="20">20초</button>
+        <button data-v="40">40초</button>
         <button data-v="60">60초</button>
-        <button data-v="90">90초</button>
       </div>
       <div class="hide" id="lapBox">
         <label>몇 바퀴 — 한 바퀴는 모두가 한 번씩 그리는 것</label>
@@ -793,13 +797,18 @@ summary{cursor:pointer;font-size:17px;font-weight:700;color:var(--dim)}
         <button class="btn sm" id="qClear">전부 지우기</button>
       </div>
       <div class="board" id="qBoard"></div>
-      <div class="chat" id="qChat"></div>
-      <form class="row chatbar" id="qForm">
-        <input type="text" id="qSay" maxlength="30" placeholder="뭘까요?" autocomplete="off">
-        <button class="btn sm" type="submit">보내기</button>
-      </form>
+      <!-- 채팅은 여기 없고 #talk 가 옮겨 온다 -->
     </div>
   </section>
+
+  <!-- 채팅 — 한 벌만 두고, 방 안에서는 지금 떠 있는 화면으로 옮겨 붙인다(show) -->
+  <div class="talk hide" id="talk">
+    <div class="chat" id="qChat"></div>
+    <form class="row chatbar" id="qForm">
+      <input type="text" id="qSay" maxlength="30" placeholder="한마디" autocomplete="off">
+      <button class="btn sm" type="submit">보내기</button>
+    </form>
+  </div>
 
   <!-- 스케치퀴즈: 끝 -->
   <section class="card hide" id="sQDone">
@@ -1138,7 +1147,7 @@ function connect(){
     /* 한 번도 못 받고 끊기기만 세 번이면 안 받아 주는 방이다 — 꽉 찼거나 없는 주소. 문간으로 돌려보낸다 */
     if (!ws.got && (S.misses = (S.misses || 0) + 1) >= 3) {
       S.code = ''; S.sock = null; S.room = null; S.misses = 0;
-      toast('방에 들어가지 못했습니다'); $('#bNew').disabled = false; draw(); return;
+      toast('방에 들어가지 못했습니다'); $('#bNew').disabled = false; $('#bMake').disabled = false; draw(); return;
     }
     setTimeout(connect, 1200);
   };
@@ -1256,6 +1265,7 @@ function leaveDone(){
   renderChat();
   history.replaceState(null, '', location.pathname);
   S.entered = true;
+  $('#bMake').disabled = false;          // 방을 만들 때 잠갔던 단추 — 다시 만들 수 있게 푼다
   draw();
   pollRooms();
 }
@@ -1354,11 +1364,25 @@ function show(){
   document.body.classList.toggle('wide', main === '#sDraw' || main === '#sGuess' || main === '#sReveal' || main === '#sAlbum' || main === '#sQuiz');
   document.body.classList.toggle('mid', main === '#sGate' || main === '#sLobby' || main === '#sPick' || main === '#sWait'
     || main === '#sDone' || main === '#sQPick' || main === '#sQDone');
+  placeTalk(main);
   SECTIONS.forEach(function(s){
     var el = $(s), was = !el.classList.contains('hide'), now = want.indexOf(s) >= 0;
     el.classList.toggle('hide', !now);
     if (now && !was) { el.classList.remove('in'); void el.offsetWidth; el.classList.add('in'); }   // 새로 뜨는 판만
   });
+}
+
+/** 채팅을 지금 화면 아래(옆 판이 있으면 옆 판)로 옮긴다. 방 밖에서는 숨긴다 */
+function placeTalk(main){
+  var talk = $('#talk');
+  var inRoom = !!S.room && main && main !== '#sTitle' && main !== '#sGate';
+  talk.classList.toggle('hide', !inRoom);
+  if (!inRoom) return;
+  var sec = $(main), slot = sec.querySelector(':scope > .side') || sec;
+  if (talk.parentNode !== slot) {
+    slot.appendChild(talk);
+    var c = $('#qChat'); c.scrollTop = c.scrollHeight;
+  }
 }
 
 function whoHtml(r, markDone){
@@ -1423,6 +1447,8 @@ function draw(){
   }
   $('#rc').textContent = r.code;
   clock(r);
+  $('#qSay').disabled = false;
+  $('#qSay').placeholder = '한마디';
 
   var isHost = r.me === r.host;
   var n = r.players.length;
@@ -1434,7 +1460,6 @@ function draw(){
     S.peek = false; S.albSel = null;
     S.pickFor = S.padFor = S.stageFor = S.guessFor = null;   // 지난 판 표식은 지운다 — 안 그러면 카드·그림판·무대가 그대로 남는다
     S.qturn = S.qpickFor = S.focusFor = null;
-    if ((S.chat || []).length) { S.chat = []; renderChat(); }
     qpad.strokes = []; qpad.live = null;
     show('#sLobby');
     $('#lobbyCode').textContent = r.code;
@@ -1690,9 +1715,8 @@ function drawQuiz(r, isHost){
   }
   $('#qBoard').innerHTML = boardHtml(r);
   var can = r.seat >= 0;
-  $('#qSay').disabled = !can;
-  $('#qSay').placeholder = !can ? '구경 중입니다'
-    : r.phase === 'qend' ? '한마디'
+  $('#qSay').placeholder = r.phase !== 'qplay' ? '한마디'
+    : !can ? '구경 중 — 한마디'
     : q.mine ? '그림으로만 알려 주세요' : q.iSolved ? '맞힌 사람끼리 하는 말' : '뭘까요?';
   /* 좁은 화면에서 자판이 올라오면 그림이 가린다 — 넓은 화면에서만 먼저 잡아 준다 */
   if (can && !q.mine && !q.iSolved && r.phase === 'qplay' && S.focusFor !== tk && window.innerWidth >= 760) {

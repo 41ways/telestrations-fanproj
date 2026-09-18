@@ -116,5 +116,5 @@ for (const d of SECS) {
   assert(secsOf(d, 'guess') >= 20 && secsOf(d, 'guess') <= d, '맞히는 시간 ' + d);
   assert(secsOf(d, 'pickdraw') > d, '고르고 그리기 ' + d);
 }
-assert(secsOf(999, 'draw') === 60, '모르는 값은 기본으로');
+assert(secsOf(999, 'draw') === 40, '모르는 값은 기본으로');
 console.log('시간 통과');
