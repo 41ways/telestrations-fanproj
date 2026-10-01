@@ -552,6 +552,15 @@ input.code{text-transform:uppercase;letter-spacing:.28em;font-size:24px;font-wei
 .rooms li .rg{font-size:15px;color:var(--dim)}
 .rooms li .rn{margin-left:auto;font-size:15px;font-weight:700}
 .rooms li .live{color:var(--accent)}
+/* 넓은 화면에서는 방 목록이 만들기·들어가기 옆에 선다. 좁은 화면은 그대로 아래에 쌓인다 */
+@media (min-width:760px){
+  body.gate .wrap{max-width:900px}
+  #sGate{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 28px;align-items:start}
+  #sGate>.lede{grid-column:1/-1}
+  #sGate .grooms{border-left:3px dashed var(--dim);padding-left:28px;align-self:stretch}
+  #sGate .grooms>label:first-child{margin-top:0}
+  #sGate .rooms{max-height:min(420px,calc(100vh - 220px))}
+}
 
 /* ── 스케치퀴즈 ── */
 .board{display:flex;flex-wrap:wrap;gap:6px}
@@ -685,6 +694,7 @@ summary{cursor:pointer;font-size:17px;font-weight:700;color:var(--dim)}
   <!-- 문간 -->
   <section class="card tilt hide" id="sGate">
     <p class="lede hide" id="gateLede"></p>
+    <div class="gform">
     <label for="nm">이름</label>
     <input type="text" id="nm" maxlength="12" placeholder="뭐라고 부를까요" autocomplete="nickname">
     <div class="row"><button class="btn go big" id="bNew">방 만들기</button></div>
@@ -702,9 +712,12 @@ summary{cursor:pointer;font-size:17px;font-weight:700;color:var(--dim)}
     <label for="cd">방 번호</label>
     <input type="text" id="cd" class="code" maxlength="4" placeholder="ABCD" autocapitalize="characters" autocomplete="off" spellcheck="false">
     <div class="row"><button class="btn" id="bJoin">들어가기</button></div>
+    </div>
+    <div class="grooms">
     <label>열린 방</label>
     <ul class="rooms" id="roomList"></ul>
     <p class="note" id="roomsNote">열린 방을 찾는 중…</p>
+    </div>
   </section>
 
   <!-- 대기실 -->
@@ -1413,6 +1426,7 @@ function show(){
   document.body.classList.toggle('wide', main === '#sDraw' || main === '#sGuess' || main === '#sReveal' || main === '#sAlbum' || main === '#sQuiz');
   document.body.classList.toggle('mid', main === '#sGate' || main === '#sLobby' || main === '#sPick' || main === '#sWait'
     || main === '#sDone' || main === '#sQPick' || main === '#sQDone');
+  document.body.classList.toggle('gate', main === '#sGate');
   placeTalk(main);
   SECTIONS.forEach(function(s){
     var el = $(s), was = !el.classList.contains('hide'), now = want.indexOf(s) >= 0;
